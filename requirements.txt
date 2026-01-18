@@ -2,7 +2,7 @@
 
 # AI Providers
 openai>=1.0.0           # OpenAI (ChatGPT) and Grok (xAI uses OpenAI-compatible API)
-google-generativeai>=0.3.0  # Google Gemini
+google-genai>=1.0.0     # Google Gemini (new SDK with search grounding support)
 
 # Browser automation
 playwright>=1.40.0

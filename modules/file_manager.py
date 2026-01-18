@@ -20,6 +20,14 @@ class FileManager:
         self.video_folder = Path(video_folder)
         self.video_folder.mkdir(parents=True, exist_ok=True)
 
+    def save_topic(self, topic: str):
+        """Save the video topic."""
+        topic_file = self.video_folder / "topic.txt"
+        topic = clean_ai_text(topic)
+        with open(topic_file, 'w', encoding='utf-8') as f:
+            f.write(topic)
+        print(f"Topic saved to {topic_file}")
+
     def save_script(self, script: str):
         """Save the voiceover script."""
         script_file = self.video_folder / "script.txt"
@@ -82,13 +90,8 @@ class FileManager:
         return images_folder
 
     def save_content(self, topic: str, script: str, titles: list[str], description: str, prompts: list[dict]):
-        """Save all content files."""
-        # Save topic
-        topic_file = self.video_folder / "topic.txt"
-        topic = clean_ai_text(topic)
-        with open(topic_file, 'w', encoding='utf-8') as f:
-            f.write(topic)
-
+        """Save all content files at once (legacy method, prefer saving progressively)."""
+        self.save_topic(topic)
         self.save_script(script)
         self.save_titles(titles)
         self.save_description(description)

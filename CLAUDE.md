@@ -23,9 +23,21 @@ Each channel has its own configuration:
   "image_style_suffix": "...",     // Appended to all image prompts
   "target_video_length_minutes": 20,
   "target_word_count": 3000,
-  "images_per_minute": 4
+  "images_per_minute": 4,
+  "enable_web_search": false,      // Enable AI web search for factual/news content
+  "temperature": null              // AI temperature (null = model default, 0.0-1.0)
 }
 ```
+
+### Web Search & Temperature
+- **enable_web_search**: When `true`, the AI will search the internet before generating content. Use for:
+  - News/current events channels
+  - Factual documentary content
+  - Topics requiring up-to-date information
+- **temperature**: Controls AI creativity/randomness:
+  - `null` = use model default (usually 1.0)
+  - `0.0-0.3` = more focused, deterministic (good for factual content)
+  - `0.7-1.0` = more creative, varied (good for fiction/entertainment)
 
 ### Round-Robin Processing
 The bot iterates through channels, generating one video per channel per iteration:

@@ -72,41 +72,49 @@ async def create_new_video(channel: Channel, topic: str = None, client: Higgsfie
     state = StateManager(video_folder)
     files = FileManager(video_folder)
 
-    # Phase 1: Generate Script
+    # Phase 1: Generate Script (save each piece progressively so user can read while generating)
     print(f"\n[PHASE 1] Generating Script with {config.AI_PROVIDER.upper()} AI...")
     print("-" * 40)
 
     script_gen = ScriptGenerator(channel)
-    content = script_gen.generate_all(topic)
 
-    state.set_topic(content["topic"])
+    # Generate and save topic immediately
+    if topic is None:
+        print("Generating topic...")
+        topic = script_gen.generate_topic()
+    print(f"Topic: {topic}")
+    files.save_topic(topic)
+    state.set_topic(topic)
+
+    # Generate and save script immediately (user can start reading now!)
+    print("Generating script...")
+    script = script_gen.generate_script(topic)
+    word_count = len(script.split())
+    duration = script_gen.estimate_duration_minutes(script)
+    files.save_script(script)
+    print(f"Script generated: {word_count} words (~{duration:.1f} minutes)")
+
+    # Generate and save titles
+    print("Generating titles...")
+    titles = script_gen.generate_titles(topic, script)
+    files.save_titles(titles)
+
+    # Generate and save description
+    print("Generating description...")
+    description = script_gen.generate_description(topic, script)
+    files.save_description(description)
+
     state.set_status(VideoState.SCRIPT_GENERATED)
 
-    print(f"\nTopic: {content['topic']}")
-    print(f"Word count: {content['word_count']}")
-    print(f"Estimated duration: {content['estimated_duration_minutes']:.1f} minutes")
-
-    # Phase 2: Generate Image Prompts
+    # Phase 2: Generate Image Prompts (script.txt is already available to read!)
     print("\n[PHASE 2] Generating Image Prompts...")
     print("-" * 40)
 
     prompt_gen = PromptGenerator(channel)
-    prompts = prompt_gen.generate_all_prompts(content["topic"], content["script"])
+    prompts = prompt_gen.generate_all_prompts(topic, script)
+    files.save_prompts(prompts)
 
-    # Save all content
-    files.save_content(
-        content["topic"],
-        content["script"],
-        content["titles"],
-        content["description"],
-        prompts
-    )
-
-    state.set_script_info(
-        content["word_count"],
-        content["estimated_duration_minutes"],
-        len(prompts)
-    )
+    state.set_script_info(word_count, duration, len(prompts))
     state.set_status(VideoState.PROMPTS_GENERATED)
 
     print(f"\nGenerated {len(prompts)} image prompts")
@@ -188,7 +196,7 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
         await multi_channel_video_creation(channel_manager, client)
 
 
-async def multi_channel_video_creation(channel_manager: ChannelManager, client: HiggsfieldClient = None, specific_channel: Channel = None, first_topic: str = None):
+async def multi_channel_video_creation(channel_manager: ChannelManager, client: HiggsfieldClient = None, specific_channel: Channel = None, first_topic: str = None, single_video: bool = False):
     """Create videos for multiple channels in round-robin fashion.
 
     Args:
@@ -196,6 +204,7 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
         client: Optional existing HiggsfieldClient to reuse browser connection
         specific_channel: If provided, start round-robin from this channel
         first_topic: Optional topic for the first video only
+        single_video: If True, exit after creating one video
     """
     video_count = 1
     all_channels = channel_manager.get_all_channels()
@@ -224,6 +233,11 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                 first_video = False
                 await create_new_video(channel, topic=topic, client=client)
                 video_count += 1
+
+                # Exit after first video if single-video mode
+                if single_video:
+                    print("\n[SINGLE VIDEO MODE] One video completed. Exiting.")
+                    return
             except KeyboardInterrupt:
                 print("\n\nStopping continuous mode. Last video was saved.")
                 return
@@ -234,7 +248,7 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                 time.sleep(10)
 
 
-async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, topic: str = None, resume_folder: Path = None):
+async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, topic: str = None, resume_folder: Path = None, single_video: bool = False):
     """Run continuous video creation with a single persistent browser session.
 
     Args:
@@ -242,6 +256,7 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
         channel_id: Optional specific channel ID to use (None = round-robin all channels)
         topic: Optional topic for the first video
         resume_folder: Optional video folder to resume before continuing
+        single_video: If True, exit after creating one video
     """
     # Get specific channel if requested
     specific_channel = None
@@ -262,10 +277,10 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
 
         if resume_folder:
             # Resume the specified video first, then continue
-            await resume_video(resume_folder, channel_manager, continue_after=True, client=client)
+            await resume_video(resume_folder, channel_manager, continue_after=not single_video, client=client)
         else:
             # Round-robin through all channels (starting from specific_channel if provided)
-            await multi_channel_video_creation(channel_manager, client=client, specific_channel=specific_channel, first_topic=topic)
+            await multi_channel_video_creation(channel_manager, client=client, specific_channel=specific_channel, first_topic=topic, single_video=single_video)
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user.")
@@ -414,6 +429,11 @@ def main():
         action="store_true",
         help="Only generate script and prompts, skip image generation"
     )
+    parser.add_argument(
+        "--single-video",
+        action="store_true",
+        help="Create only one video and exit (don't continue round-robin)"
+    )
 
     args = parser.parse_args()
 
@@ -447,7 +467,7 @@ def main():
             if not video_folder:
                 print("No incomplete videos found to resume.")
                 print("Starting new video instead...")
-                asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic))
+                asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, single_video=args.single_video))
                 return
         else:
             # Parse channel_id/videoX format
@@ -470,7 +490,7 @@ def main():
                 sys.exit(1)
 
         # Resume the video and continue creating new ones after completion
-        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, video_folder))
+        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, video_folder, single_video=args.single_video))
         return
 
     # Create new video
@@ -498,33 +518,48 @@ def main():
         files = FileManager(video_folder)
 
         script_gen = ScriptGenerator(channel)
-        content = script_gen.generate_all(args.topic)
 
-        state.set_topic(content["topic"])
+        # Generate and save each piece progressively
+        topic = args.topic
+        if topic is None:
+            print("Generating topic...")
+            topic = script_gen.generate_topic()
+        print(f"Topic: {topic}")
+        files.save_topic(topic)
+        state.set_topic(topic)
 
+        # Generate and save script immediately (user can start reading now!)
+        print("Generating script...")
+        script = script_gen.generate_script(topic)
+        word_count = len(script.split())
+        duration = script_gen.estimate_duration_minutes(script)
+        files.save_script(script)
+        print(f"Script generated: {word_count} words (~{duration:.1f} minutes)")
+
+        # Generate and save titles
+        print("Generating titles...")
+        titles = script_gen.generate_titles(topic, script)
+        files.save_titles(titles)
+
+        # Generate and save description
+        print("Generating description...")
+        description = script_gen.generate_description(topic, script)
+        files.save_description(description)
+
+        # Generate and save prompts
+        print("Generating image prompts...")
         prompt_gen = PromptGenerator(channel)
-        prompts = prompt_gen.generate_all_prompts(content["topic"], content["script"])
+        prompts = prompt_gen.generate_all_prompts(topic, script)
+        files.save_prompts(prompts)
 
-        files.save_content(
-            content["topic"],
-            content["script"],
-            content["titles"],
-            content["description"],
-            prompts
-        )
-
-        state.set_script_info(
-            content["word_count"],
-            content["estimated_duration_minutes"],
-            len(prompts)
-        )
+        state.set_script_info(word_count, duration, len(prompts))
         state.set_status(VideoState.PROMPTS_GENERATED)
 
         print(f"\nScript and prompts saved to: {video_folder}")
         print("Run without --script-only to generate images.")
     else:
         # Run continuous video creation with persistent browser
-        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic))
+        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, single_video=args.single_video))
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ Manages multiple YouTube channel configurations and iteration
 import json
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -25,6 +25,8 @@ class Channel:
     target_video_length_minutes: int
     target_word_count: int
     images_per_minute: int
+    enable_web_search: bool = False  # Enable web search for factual/news content
+    temperature: Optional[float] = None  # AI temperature (None = use model default)
 
     @property
     def total_images(self) -> int:
@@ -49,7 +51,9 @@ class Channel:
             image_style_suffix=data.get("image_style_suffix", ""),
             target_video_length_minutes=data.get("target_video_length_minutes", 20),
             target_word_count=data.get("target_word_count", 3000),
-            images_per_minute=data.get("images_per_minute", 4)
+            images_per_minute=data.get("images_per_minute", 4),
+            enable_web_search=data.get("enable_web_search", False),
+            temperature=data.get("temperature", None)
         )
 
 
@@ -94,7 +98,9 @@ class ChannelManager:
             "image_style_suffix": "realistic, historically accurate, cinematic lighting, highly detailed, 16:9 aspect ratio, dramatic composition",
             "target_video_length_minutes": 20,
             "target_word_count": 3000,
-            "images_per_minute": 4
+            "images_per_minute": 4,
+            "enable_web_search": False,
+            "temperature": None
         }
 
         with open(self.config_path, 'w', encoding='utf-8') as f:
@@ -150,6 +156,9 @@ class ChannelManager:
             print(f"  Word Count: {ch.target_word_count}")
             print(f"  Images: {ch.total_images} ({ch.images_per_minute}/min)")
             print(f"  Topics: {len(ch.topic_categories)} categories")
+            print(f"  Web Search: {'Enabled' if ch.enable_web_search else 'Disabled'}")
+            temp_str = f"{ch.temperature}" if ch.temperature is not None else "Default"
+            print(f"  Temperature: {temp_str}")
         print("-" * 60)
 
 
