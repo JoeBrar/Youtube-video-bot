@@ -4,6 +4,7 @@ Supports multiple AI providers: OpenAI (ChatGPT), Google Gemini, xAI Grok
 With optional web search for factual/news content
 """
 import sys
+import json
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
@@ -15,6 +16,57 @@ from modules.text_utils import clean_ai_text
 
 if TYPE_CHECKING:
     from modules.channel_manager import Channel
+
+
+# Path to channel topics file
+CHANNEL_TOPICS_FILE = Path(__file__).parent.parent / "channel_topics.json"
+
+
+def load_channel_topics() -> dict:
+    """Load channel topics from JSON file."""
+    if CHANNEL_TOPICS_FILE.exists():
+        with open(CHANNEL_TOPICS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
+def save_channel_topics(topics: dict) -> None:
+    """Save channel topics to JSON file."""
+    with open(CHANNEL_TOPICS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(topics, f, indent=2, ensure_ascii=False)
+
+
+def get_next_unused_topic(channel_id: str) -> Optional[dict]:
+    """Get the next unused topic for a channel.
+
+    Returns:
+        The topic dict with video_id and topic, or None if no unused topics.
+    """
+    topics = load_channel_topics()
+
+    if channel_id not in topics:
+        return None
+
+    for topic_entry in topics[channel_id]:
+        if not topic_entry.get("used", False):
+            return topic_entry
+
+    return None
+
+
+def mark_topic_as_used(channel_id: str, video_id: int) -> None:
+    """Mark a topic as used in the channel topics file."""
+    topics = load_channel_topics()
+
+    if channel_id not in topics:
+        return
+
+    for topic_entry in topics[channel_id]:
+        if topic_entry.get("video_id") == video_id:
+            topic_entry["used"] = True
+            break
+
+    save_channel_topics(topics)
 
 
 class AIClient(ABC):
@@ -254,40 +306,27 @@ class ScriptGenerator:
         if channel.enable_web_search:
             print("Web search is ENABLED for this channel - will search for real/current information")
 
-    def generate_topic(self) -> str:
-        """Generate an interesting topic for a video based on channel niche."""
-        video_length = self.channel.target_video_length_minutes
+    def get_topic(self) -> tuple[str, int] | None:
+        """Get the next available topic from channel_topics.json.
 
-        # Add web search instruction if enabled
-        search_instruction = ""
-        if self.channel.enable_web_search:
-            search_instruction = """
-IMPORTANT: Search the web for current trending topics, recent news, and real events in this niche.
-Focus on real, factual, recent events and stories - not fictional or hypothetical scenarios.
-"""
+        Topics are strictly loaded from channel_topics.json - no AI generation.
+        If no unused topics are available, returns None.
 
-        prompt = f"""You are a content strategist for a YouTube channel called "{self.channel.name}" that creates engaging {self.channel.niche} videos.
+        Returns:
+            Tuple of (topic_string, video_id) or None if no topics available
+        """
+        topic_entry = get_next_unused_topic(self.channel.id)
 
-Channel description: {self.channel.description}
-{search_instruction}
-Generate ONE unique and fascinating {self.channel.niche} topic that would make a great {video_length}-minute YouTube video. The topic should be:
-- Interesting and engaging for a general audience
-- Have enough depth for a detailed exploration
-- Be somewhat lesser-known or have a unique angle
-- Have visual potential (can be illustrated with compelling images)
+        if topic_entry:
+            topic = topic_entry["topic"]
+            video_id = topic_entry["video_id"]
+            print(f"Using topic (video{video_id}) from channel_topics.json")
+            # Mark the topic as used
+            mark_topic_as_used(self.channel.id, video_id)
+            return topic, video_id
 
-Categories you can consider: {', '.join(self.channel.topic_categories)}
-
-Respond with ONLY the topic title, nothing else. Make it specific, not generic. You can make it detialed and long instead of keeping it too short.
-
-Your topic:"""
-
-        try:
-            topic = self.client.generate(prompt)
-            return clean_ai_text(topic)
-        except Exception as e:
-            print(f"ERROR generating topic: {e}")
-            raise
+        # No topics available for this channel
+        return None
 
     def generate_script(self, topic: str) -> str:
         """Generate a full voiceover script for the given topic."""
@@ -399,11 +438,17 @@ Write the description:"""
         word_count = len(script.split())
         return word_count / self.channel.words_per_minute
 
-    def generate_all(self, topic: str = None) -> dict:
-        """Generate all content for a video."""
+    def generate_all(self, topic: str = None, video_id: int = None) -> dict | None:
+        """Generate all content for a video.
+
+        Returns None if no topic is available for this channel.
+        """
         if topic is None:
-            print("Generating topic...")
-            topic = self.generate_topic()
+            result = self.get_topic()
+            if result is None:
+                print(f"No topics available for channel: {self.channel.name}")
+                return None
+            topic, video_id = result
             print(f"Topic: {topic}")
 
         print("Generating script...")
@@ -423,7 +468,8 @@ Write the description:"""
             "titles": titles,
             "description": description,
             "word_count": len(script.split()),
-            "estimated_duration_minutes": duration
+            "estimated_duration_minutes": duration,
+            "predefined_video_id": video_id  # None if AI-generated, video_id if from channel_topics.json
         }
 
 

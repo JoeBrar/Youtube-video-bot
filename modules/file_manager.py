@@ -135,11 +135,13 @@ class FileManager:
         return info
 
 
-def create_new_video_folder(channel: "Channel") -> Path:
+def create_new_video_folder(channel: "Channel", video_id: int = None) -> Path:
     """Create a new video folder for a specific channel.
 
     Args:
         channel: The Channel to create a video folder for
+        video_id: Optional specific video ID to use (from channel_topics.json).
+                  If None, auto-generates the next sequential number.
 
     Returns:
         Path to the new video folder: output/{channel_id}/videoX/
@@ -147,7 +149,14 @@ def create_new_video_folder(channel: "Channel") -> Path:
     from modules.channel_manager import ChannelManager
 
     manager = ChannelManager()
-    video_num = manager.get_next_video_number(channel)
+
+    if video_id is not None:
+        # Use the predefined video ID from channel_topics.json
+        video_num = video_id
+    else:
+        # Auto-generate the next sequential number
+        video_num = manager.get_next_video_number(channel)
+
     channel_dir = manager.get_channel_output_dir(channel)
     video_folder = channel_dir / f"video{video_num}"
     video_folder.mkdir(parents=True, exist_ok=True)

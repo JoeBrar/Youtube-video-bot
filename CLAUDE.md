@@ -93,8 +93,8 @@ python main.py
 # Start round-robin from specific channel
 python main.py --channel history_epoch
 
-# Specific topic
-python main.py --topic "The Siege of Constantinople 1453"
+# Single video only (don't continue round-robin)
+python main.py --single-video
 
 # Script only (no images)
 python main.py --script-only
@@ -106,6 +106,9 @@ python main.py --resume history_epoch/video3
 # List videos
 python main.py --list
 python main.py --list --channel history_epoch
+
+# List all configured channels
+python main.py --list-channels
 ```
 
 ## Configuration (config.py)

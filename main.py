@@ -55,22 +55,21 @@ def check_api_key():
     return True
 
 
-async def create_new_video(channel: Channel, topic: str = None, client: HiggsfieldClient = None):
+async def create_new_video(channel: Channel, topic: str = None, video_id: int = None, client: HiggsfieldClient = None) -> bool:
     """Create a new video from scratch for a specific channel.
 
     Args:
         channel: The Channel to create a video for
-        topic: Optional topic for the video
+        topic: Optional topic for the video (if provided, video_id should also be provided)
+        video_id: Optional video ID for the folder name
         client: Optional existing HiggsfieldClient to reuse browser connection
+
+    Returns:
+        True if video was created, False if skipped (no topic available)
     """
     print("\n" + "=" * 60)
     print(f"STARTING NEW VIDEO CREATION FOR: {channel.name}")
     print("=" * 60)
-
-    # Create new video folder for this channel
-    video_folder = create_new_video_folder(channel)
-    state = StateManager(video_folder)
-    files = FileManager(video_folder)
 
     # Phase 1: Generate Script (save each piece progressively so user can read while generating)
     print(f"\n[PHASE 1] Generating Script with {config.AI_PROVIDER.upper()} AI...")
@@ -78,11 +77,22 @@ async def create_new_video(channel: Channel, topic: str = None, client: Higgsfie
 
     script_gen = ScriptGenerator(channel)
 
-    # Generate and save topic immediately
+    # Get topic from channel_topics.json (no AI generation)
     if topic is None:
-        print("Generating topic...")
-        topic = script_gen.generate_topic()
+        print("Getting topic from channel_topics.json...")
+        result = script_gen.get_topic()
+        if result is None:
+            print(f"No topics available for {channel.name} in channel_topics.json. Skipping...")
+            return False
+        topic, video_id = result
     print(f"Topic: {topic}")
+
+    # Create video folder using the video_id from channel_topics.json
+    video_folder = create_new_video_folder(channel, video_id=video_id)
+    state = StateManager(video_folder)
+    files = FileManager(video_folder)
+
+    # Save topic
     files.save_topic(topic)
     state.set_topic(topic)
 
@@ -121,6 +131,7 @@ async def create_new_video(channel: Channel, topic: str = None, client: Higgsfie
 
     # Continue with image generation
     await generate_media(video_folder, channel, client)
+    return True
 
 
 async def resume_video(video_folder: Path, channel_manager: ChannelManager, continue_after: bool = False, client: HiggsfieldClient = None):
@@ -196,14 +207,16 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
         await multi_channel_video_creation(channel_manager, client)
 
 
-async def multi_channel_video_creation(channel_manager: ChannelManager, client: HiggsfieldClient = None, specific_channel: Channel = None, first_topic: str = None, single_video: bool = False):
+async def multi_channel_video_creation(channel_manager: ChannelManager, client: HiggsfieldClient = None, specific_channel: Channel = None, single_video: bool = False):
     """Create videos for multiple channels in round-robin fashion.
+
+    Topics are strictly loaded from channel_topics.json.
+    Channels with no available topics are skipped.
 
     Args:
         channel_manager: ChannelManager instance
         client: Optional existing HiggsfieldClient to reuse browser connection
         specific_channel: If provided, start round-robin from this channel
-        first_topic: Optional topic for the first video only
         single_video: If True, exit after creating one video
     """
     video_count = 1
@@ -219,19 +232,38 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
         print("ERROR: No channels configured. Please check channels.json")
         return
 
-    first_video = True
+    # Track channels with no remaining topics
+    exhausted_channels = set()
+
     while True:
+        # Check if all channels are exhausted
+        if len(exhausted_channels) >= len(channels):
+            print("\n" + "=" * 60)
+            print("ALL CHANNELS EXHAUSTED - No more topics in channel_topics.json")
+            print("=" * 60)
+            print("Add more topics to channel_topics.json to continue.")
+            return
+
         for channel in channels:
+            # Skip channels with no remaining topics
+            if channel.id in exhausted_channels:
+                continue
+
             print("\n" + "=" * 60)
             print(f"STARTING VIDEO #{video_count} FOR CHANNEL: {channel.name}")
             print("=" * 60)
             print("Press Ctrl+C to stop after current video completes.\n")
 
             try:
-                # Use first_topic only for the very first video
-                topic = first_topic if first_video else None
-                first_video = False
-                await create_new_video(channel, topic=topic, client=client)
+                # Topics come strictly from channel_topics.json
+                success = await create_new_video(channel, client=client)
+
+                if not success:
+                    # No topic available for this channel
+                    exhausted_channels.add(channel.id)
+                    print(f"Channel {channel.name} has no more topics. Skipping in future rounds.")
+                    continue
+
                 video_count += 1
 
                 # Exit after first video if single-video mode
@@ -248,13 +280,14 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                 time.sleep(10)
 
 
-async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, topic: str = None, resume_folder: Path = None, single_video: bool = False):
+async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, resume_folder: Path = None, single_video: bool = False):
     """Run continuous video creation with a single persistent browser session.
+
+    Topics are strictly loaded from channel_topics.json.
 
     Args:
         channel_manager: ChannelManager instance
         channel_id: Optional specific channel ID to use (None = round-robin all channels)
-        topic: Optional topic for the first video
         resume_folder: Optional video folder to resume before continuing
         single_video: If True, exit after creating one video
     """
@@ -280,7 +313,8 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
             await resume_video(resume_folder, channel_manager, continue_after=not single_video, client=client)
         else:
             # Round-robin through all channels (starting from specific_channel if provided)
-            await multi_channel_video_creation(channel_manager, client=client, specific_channel=specific_channel, first_topic=topic, single_video=single_video)
+            # Topics come strictly from channel_topics.json
+            await multi_channel_video_creation(channel_manager, client=client, specific_channel=specific_channel, single_video=single_video)
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user.")
@@ -403,11 +437,6 @@ def main():
         help="Channel to generate for: channel_id or 'all' for round-robin (default: all)"
     )
     parser.add_argument(
-        "--topic", "-t",
-        type=str,
-        help="Specific topic for the FIRST video only (optional, AI will choose if not provided). When used with --channel, creates first video for that channel with this topic, then continues round-robin with random topics."
-    )
-    parser.add_argument(
         "--resume", "-r",
         type=str,
         nargs="?",
@@ -467,7 +496,7 @@ def main():
             if not video_folder:
                 print("No incomplete videos found to resume.")
                 print("Starting new video instead...")
-                asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, single_video=args.single_video))
+                asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, single_video=args.single_video))
                 return
         else:
             # Parse channel_id/videoX format
@@ -490,7 +519,7 @@ def main():
                 sys.exit(1)
 
         # Resume the video and continue creating new ones after completion
-        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, video_folder, single_video=args.single_video))
+        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, video_folder, single_video=args.single_video))
         return
 
     # Create new video
@@ -513,18 +542,24 @@ def main():
 
         print(f"Generating script and prompts only for {channel.name} (no images)...")
 
-        video_folder = create_new_video_folder(channel)
+        script_gen = ScriptGenerator(channel)
+
+        # Get topic from channel_topics.json (no AI generation)
+        print("Getting topic from channel_topics.json...")
+        result = script_gen.get_topic()
+        if result is None:
+            print(f"No topics available for {channel.name} in channel_topics.json.")
+            print("Add more topics to channel_topics.json and try again.")
+            sys.exit(1)
+        topic, video_id = result
+        print(f"Topic: {topic}")
+
+        # Create video folder using the video_id from channel_topics.json
+        video_folder = create_new_video_folder(channel, video_id=video_id)
         state = StateManager(video_folder)
         files = FileManager(video_folder)
 
-        script_gen = ScriptGenerator(channel)
-
-        # Generate and save each piece progressively
-        topic = args.topic
-        if topic is None:
-            print("Generating topic...")
-            topic = script_gen.generate_topic()
-        print(f"Topic: {topic}")
+        # Save topic
         files.save_topic(topic)
         state.set_topic(topic)
 
@@ -559,7 +594,8 @@ def main():
         print("Run without --script-only to generate images.")
     else:
         # Run continuous video creation with persistent browser
-        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, args.topic, single_video=args.single_video))
+        # Topics come strictly from channel_topics.json
+        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, single_video=args.single_video))
 
 
 if __name__ == "__main__":
