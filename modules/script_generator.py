@@ -163,15 +163,69 @@ class GeminiClient(AIClient):
             config_kwargs["tools"] = tools
         
         # Create config if we have any settings
+        from google.genai.types import HarmCategory, HarmBlockThreshold
+        
+        safety_settings = [
+            self.types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=HarmBlockThreshold.BLOCK_NONE,
+            ),
+            self.types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=HarmBlockThreshold.BLOCK_NONE,
+            ),
+            self.types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                threshold=HarmBlockThreshold.BLOCK_NONE,
+            ),
+            self.types.SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold=HarmBlockThreshold.BLOCK_NONE,
+            ),
+        ]
+        
+        config_kwargs["safety_settings"] = safety_settings
+        
         gen_config = self.types.GenerateContentConfig(**config_kwargs) if config_kwargs else None
         
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=gen_config
-        )
+        # Retry logic for handling ServerError/Overloaded errors OR empty responses
+        import time
+        import random
+        from google.genai import errors
         
-        return response.text.strip()
+        max_retries = 5
+        retry_interval = 5  # Fixed 5 second interval as requested
+        
+        for attempt in range(max_retries + 1):  # +1 for the initial attempt
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=gen_config
+                )
+                
+                # Check for empty response (common with Gemini safety blocks or internal glitches)
+                if not response.text:
+                    if attempt < max_retries:
+                        print(f"Warning: Gemini returned no text. Retrying in {retry_interval}s... (Attempt {attempt + 1}/{max_retries})")
+                        time.sleep(retry_interval)
+                        continue
+                    else:
+                        print(f"Error: Gemini returned no text after {max_retries} retries. Feedback: {response.prompt_feedback}")
+                        return ""
+                    
+                return response.text.strip()
+                
+            except errors.ServerError as e:
+                if attempt < max_retries:
+                    print(f"Gemini ServerError ({e}). Retrying in {retry_interval}s... (Attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_interval)
+                else:
+                    print(f"Gemini failed after {max_retries} attempts.")
+                    raise e
+            except Exception as e:
+                # Re-raise other exceptions immediately
+                raise e
 
 
 class GrokClient(AIClient):

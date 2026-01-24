@@ -83,29 +83,27 @@ output/
 
 ## Usage
 ```bash
-# Install
+# Install dependencies
 pip install -r requirements.txt
 playwright install chromium
 
-# Run (round-robin all channels)
+# Step 1: Generate Script (Round-robin or specific channel)
+# This will generate script, titles, description and STOP.
 python main.py
-
-# Start round-robin from specific channel
 python main.py --channel history_epoch
 
-# Single video only (don't continue round-robin)
-python main.py --single-video
+# Step 2: Add Voiceover
+# Generate your voiceover and save the .srt file as 'voiceover.srt'
+# inside the new video folder (e.g. output/history_epoch/video1/)
 
-# Script only (no images)
-python main.py --script-only
-
-# Resume interrupted session
+# Step 3: Resume to Generate Prompts & Images
+# This reads the SRT, generates timed prompts, and starts image generation.
 python main.py --resume auto
 python main.py --resume history_epoch/video3
 
+# Other commands:
 # List videos
 python main.py --list
-python main.py --list --channel history_epoch
 
 # List all configured channels
 python main.py --list-channels

@@ -90,7 +90,11 @@ class MissingImageRetrier:
         print("\n[2/5] Detecting missing images...")
 
         # Get required clip numbers from prompts
-        required = {p['clip_number'] for p in prompts}
+        required = set()
+        for p in prompts:
+            clip_num = p.get('clip_number', p.get('id'))
+            if clip_num is not None:
+                required.add(clip_num)
 
         # Get existing clip numbers from images/ folder
         existing = set()
@@ -117,7 +121,11 @@ class MissingImageRetrier:
         print("-" * 60)
 
         # Create prompts map for quick lookup
-        prompts_map = {p['clip_number']: p['prompt'] for p in prompts}
+        prompts_map = {}
+        for p in prompts:
+            clip_num = p.get('clip_number', p.get('id'))
+            if clip_num is not None:
+                prompts_map[clip_num] = p.get('prompt', '')
 
         # Initialize tracking
         missing_queue = list(missing_clip_numbers)
@@ -144,6 +152,7 @@ class MissingImageRetrier:
                 if success:
                     in_progress[clip_number] = prompt
                     self.state_manager.mark_image_started(clip_number)
+
 
                     # Wait longer after first submission
                     if first_submission:

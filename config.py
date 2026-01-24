@@ -11,7 +11,7 @@ load_dotenv()
 # AI PROVIDER SETTINGS
 # =============================================================================
 # Choose your AI provider: "openai", "gemini", or "grok"
-AI_PROVIDER = "openai"
+AI_PROVIDER = "gemini"
 
 # =============================================================================
 # API KEYS (set the one for your chosen provider)

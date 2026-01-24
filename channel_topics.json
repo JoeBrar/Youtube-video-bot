@@ -778,12 +778,12 @@
     {
       "video_id": 8,
       "topic": "The Weimar Hyperinflation: When Germans Needed Wheelbarrows of Cash to Buy Bread",
-      "used": true
+      "used": false
     },
     {
       "video_id": 9,
       "topic": "The Bretton Woods System: How America Became the World's Banker After WWII",
-      "used": true
+      "used": false
     },
     {
       "video_id": 10,

@@ -116,21 +116,16 @@ async def create_new_video(channel: Channel, topic: str = None, video_id: int = 
 
     state.set_status(VideoState.SCRIPT_GENERATED)
 
-    # Phase 2: Generate Image Prompts (script.txt is already available to read!)
-    print("\n[PHASE 2] Generating Image Prompts...")
-    print("-" * 40)
-
-    prompt_gen = PromptGenerator(channel)
-    prompts = prompt_gen.generate_all_prompts(topic, script)
-    files.save_prompts(prompts)
-
-    state.set_script_info(word_count, duration, len(prompts))
-    state.set_status(VideoState.PROMPTS_GENERATED)
-
-    print(f"\nGenerated {len(prompts)} image prompts")
-
-    # Continue with image generation
-    await generate_media(video_folder, channel, client)
+    print("\n" + "=" * 60)
+    print("[PHASE 1 COMPLETE] Script generated.")
+    print("=" * 60)
+    print(f"\nVideo folder: {video_folder}")
+    print("\nNEXT STEPS:")
+    print("1. Generate Voiceover and Subtitles (SRT) externally.")
+    print(f"2. Save the subtitle file as 'voiceover.srt' in the video folder.")
+    print(f"3. Run: python main.py --resume {channel.id}/{video_folder.name}")
+    print("\nThis will generate prompts from the SRT and then create images.")
+    
     return True
 
 
@@ -167,15 +162,61 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
         return
 
     if status in [VideoState.INITIALIZED]:
-        print("Video has no script yet. Starting fresh...")
-        topic = state.state.get("topic")
-        await create_new_video(channel, topic, client)
-        if continue_after:
-            await multi_channel_video_creation(channel_manager, client)
-        return
+        files = FileManager(video_folder)
+        script_path = video_folder / "script.txt"
+        
+        # Check if we already have a script but state wasn't updated
+        if script_path.exists() and script_path.stat().st_size > 0:
+            print("Found existing script. validating...")
+            script = files.load_script()
+            topic = files.load_topic()
+            
+            if script and topic:
+                print("Restoring state from existing script...")
+                # Calculate stats
+                word_count = len(script.split())
+                # approximate duration (150 wpm)
+                duration = word_count / 150 
+                
+                state.set_topic(topic)
+                state.set_script_info(word_count, duration, 0)
+                state.set_status(VideoState.SCRIPT_GENERATED)
+                
+                print(f"State restored. Script: {word_count} words")
+                # Update status variable to fall through to next block
+                status = VideoState.SCRIPT_GENERATED
+            else:
+                 print("Script or topic empty. Starting fresh...")
+                 print("Video has no script yet. Starting fresh...")
+                 topic = state.state.get("topic")
+                 
+                 # Extract video ID from folder name to ensure consistency
+                 try:
+                     video_id = int(video_folder.name.replace("video", ""))
+                 except ValueError:
+                     video_id = None
+
+                 await create_new_video(channel, topic=topic, video_id=video_id, client=client)
+                 if continue_after:
+                     await multi_channel_video_creation(channel_manager, client)
+                 return
+        else:
+             print("Video has no script yet. Starting fresh...")
+             topic = state.state.get("topic")
+             
+             # Extract video ID from folder name to ensure consistency
+             try:
+                 video_id = int(video_folder.name.replace("video", ""))
+             except ValueError:
+                 video_id = None
+
+             await create_new_video(channel, topic=topic, video_id=video_id, client=client)
+             if continue_after:
+                 await multi_channel_video_creation(channel_manager, client)
+             return
 
     if status == VideoState.SCRIPT_GENERATED:
-        # Need to generate prompts
+        # Phase 2: Generate Prompts from SRT
         files = FileManager(video_folder)
         topic = files.load_topic()
         script = files.load_script()
@@ -184,17 +225,32 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
             print("ERROR: Script file not found!")
             return
 
-        print("\n[PHASE 2] Generating Image Prompts...")
+        # Look for SRT file
+        srt_candidates = ["voiceover.srt", "subtitles.srt", "audio.srt", "output.srt"]
+        srt_path = None
+        for name in srt_candidates:
+            if (video_folder / name).exists():
+                srt_path = video_folder / name
+                break
+        
+        if not srt_path:
+            print(f"\n[WAITING FOR VOICEOVER]")
+            print(f"Please place 'voiceover.srt' in: {video_folder}")
+            print(f"Then run resume again.")
+            return
+
+        print(f"\n[PHASE 2] Generating Prompts from SRT: {srt_path.name}")
         prompt_gen = PromptGenerator(channel)
-        prompts = prompt_gen.generate_all_prompts(topic, script)
+        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path)
         files.save_prompts(prompts)
 
         state.set_script_info(
             len(script.split()),
-            len(script.split()) / channel.words_per_minute,
+            len(script.split()) / channel.words_per_minute, # Approximate
             len(prompts)
         )
         state.set_status(VideoState.PROMPTS_GENERATED)
+        print(f"Generated {len(prompts)} prompts from subtitles.")
 
     # Retry any failed items
     state.retry_failed()
@@ -222,9 +278,13 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
     video_count = 1
     all_channels = channel_manager.get_all_channels()
     if specific_channel:
-        # Rotate list to start from specified channel
-        start_idx = next((i for i, c in enumerate(all_channels) if c.id == specific_channel.id), 0)
-        channels = all_channels[start_idx:] + all_channels[:start_idx]
+        if single_video:
+            # STRICT MODE: Only process this specific channel
+            channels = [specific_channel]
+        else:
+            # Rotate list to start from specified channel
+            start_idx = next((i for i, c in enumerate(all_channels) if c.id == specific_channel.id), 0)
+            channels = all_channels[start_idx:] + all_channels[:start_idx]
     else:
         channels = all_channels
 
@@ -463,6 +523,18 @@ def main():
         action="store_true",
         help="Create only one video and exit (don't continue round-robin)"
     )
+    parser.add_argument(
+        "--generate-prompts",
+        type=str,
+        nargs="?",
+        const="auto",
+        help="Generate prompts from SRT for an existing video (specify folder or 'auto')"
+    )
+    parser.add_argument(
+        "--skip-prompts",
+        action="store_true",
+        help="Skip prompt generation when creating a new video (for SRT workflow)"
+    )
 
     args = parser.parse_args()
 
@@ -520,6 +592,69 @@ def main():
 
         # Resume the video and continue creating new ones after completion
         asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, video_folder, single_video=args.single_video))
+        return
+
+
+    # Handle generate-prompts
+    if args.generate_prompts:
+        if args.generate_prompts == "auto":
+             # Find most recent video
+            video_folder = find_resumable_video(args.channel if args.channel != "all" else None)
+        else:
+            # Parse path
+            if "/" in args.generate_prompts:
+                channel_id, video_name = args.generate_prompts.split("/", 1)
+                video_folder = config.OUTPUT_DIR / channel_id / video_name
+            else:
+                 video_folder = Path(args.generate_prompts) # Treat as full or relative path if user provides it
+                 if not video_folder.exists():
+                     # Try searching in channels
+                     for channel_dir in config.OUTPUT_DIR.iterdir():
+                        if channel_dir.is_dir():
+                            potential = channel_dir / args.generate_prompts
+                            if potential.exists():
+                                video_folder = potential
+                                break
+        
+        if not video_folder or not video_folder.exists():
+            print(f"ERROR: Could not find video folder: {args.generate_prompts}")
+            sys.exit(1)
+
+        print(f"Generating prompts from SRT for: {video_folder}")
+        files = FileManager(video_folder)
+        state = StateManager(video_folder)
+        
+        # Look for SRT file
+        srt_candidates = ["voiceover.srt", "subtitles.srt", "audio.srt", "output.srt"]
+        srt_path = None
+        for name in srt_candidates:
+            if (video_folder / name).exists():
+                srt_path = video_folder / name
+                break
+        
+        if not srt_path:
+            print(f"ERROR: No SRT file found in {video_folder}")
+            print(f"Expected one of: {', '.join(srt_candidates)}")
+            sys.exit(1)
+
+        # Load topic/channel info
+        topic = files.load_topic()
+        channel_id = video_folder.parent.name
+        channel = channel_manager.get_channel(channel_id)
+        if not channel:
+            print("ERROR: Channel info missing.")
+            sys.exit(1)
+
+        prompt_gen = PromptGenerator(channel)
+        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path)
+        files.save_prompts(prompts)
+        
+        # Update state
+        script = files.load_script()
+        state.set_script_info(len(script.split()) if script else 0, 0, len(prompts))
+        state.set_status(VideoState.PROMPTS_GENERATED)
+        
+        print(f"\nSaved {len(prompts)} prompts to {files.prompts_file}")
         return
 
     # Create new video
@@ -581,16 +716,21 @@ def main():
         description = script_gen.generate_description(topic, script)
         files.save_description(description)
 
-        # Generate and save prompts
-        print("Generating image prompts...")
-        prompt_gen = PromptGenerator(channel)
-        prompts = prompt_gen.generate_all_prompts(topic, script)
-        files.save_prompts(prompts)
+        if not args.skip_prompts:
+            # Generate and save prompts
+            print("Generating image prompts...")
+            prompt_gen = PromptGenerator(channel)
+            prompts = prompt_gen.generate_all_prompts(topic, script)
+            files.save_prompts(prompts)
 
-        state.set_script_info(word_count, duration, len(prompts))
-        state.set_status(VideoState.PROMPTS_GENERATED)
+            state.set_script_info(word_count, duration, len(prompts))
+            state.set_status(VideoState.PROMPTS_GENERATED)
+            print(f"\nScript and prompts saved to: {video_folder}")
+        else:
+             print(f"\nScript saved to: {video_folder}")
+             print("Skipping prompt generation (SRT workflow).")
+             print("Next: Generate voiceover/SRT, put in folder, then run --generate-prompts")
 
-        print(f"\nScript and prompts saved to: {video_folder}")
         print("Run without --script-only to generate images.")
     else:
         # Run continuous video creation with persistent browser

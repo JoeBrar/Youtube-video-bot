@@ -13,6 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import config
 from modules.script_generator import get_ai_client
 from modules.text_utils import clean_ai_text
+import modules.srt_utils as srt_utils
+# from datetime import timedelta
+
 
 if TYPE_CHECKING:
     from modules.channel_manager import Channel
@@ -94,6 +97,13 @@ Respond in this EXACT JSON format:
 Generate the prompts now:"""
 
         response_text = self.client.generate(prompt)
+        if not response_text:
+            print(f"Error: Failed to generate prompts for batch starting at {start_index} after retries.")
+            # Record failure in state (requires access to state_manager, strictly we should return empty or error indicator)
+            # For now, we return fallback/placeholder prompts to keep the pipeline moving
+            print("Generating fallback placeholder prompts...")
+            return self._fallback_parse("", segments, start_index)
+
         response_text = clean_ai_text(response_text)
 
         # Extract JSON from response (handle markdown code blocks)
@@ -131,12 +141,12 @@ Generate the prompts now:"""
                             })
                             break
 
-        # If we didn't get enough prompts, generate simple ones
+        # If we didn't get enough prompts, just add empty entries as requested
         while len(prompts) < len(segments):
             idx = len(prompts)
             prompts.append({
                 "segment_index": start_index + idx + 1,
-                "prompt": f"Scene depicting events from the {self.channel.niche} narrative, {style_suffix}"
+                "prompt": ""  # Empty as requested
             })
 
         return prompts
@@ -175,13 +185,53 @@ Generate the prompts now:"""
 
         return all_prompts[:num_images]
 
-    def enhance_prompt(self, prompt: str) -> str:
-        """Enhance a prompt to ensure quality output."""
+
+    def generate_prompts_from_srt(self, topic: str, srt_path: Path) -> list[dict]:
+        """
+        Generate image prompts based on SRT subtitles.
+        """
+        print(f"Reading subtitles from: {srt_path}")
+        subtitles = srt_utils.parse_srt(srt_path)
+        segments = srt_utils.group_srt_by_sentences(subtitles)
+        
+        print(f"Found {len(segments)} segments (sentences) in subtitles.")
+        
+        all_prompts = []
         style_suffix = self.channel.image_style_suffix
-        # Make sure it has the style suffix
-        if style_suffix not in prompt:
-            prompt = f"{prompt}, {style_suffix}"
-        return prompt
+        
+        # Prepare text segments for batch processing
+        segment_texts = [seg['text'] for seg in segments]
+        
+        # Process in batches
+        batch_size = 10
+        for i in range(0, len(segments), batch_size):
+            batch_texts = segment_texts[i:i + batch_size]
+            print(f"  Processing segments {i + 1} to {i + len(batch_texts)}...")
+            
+            # Use existing batch generation logic
+            batch_prompts = self.generate_prompts_batch(topic, batch_texts, i)
+            
+            # Map back to SRT segments
+            for j, prompt_data in enumerate(batch_prompts):
+                # Safe index check
+                if i + j < len(segments):
+                    segment_info = segments[i + j]
+                    
+                    # Format timestamp not needed for optimized json
+
+                    # Simple formatting, srt_utils might need a reverse helper or we format manually
+                    # Just generic string format for now or keep consistency with SRT
+                    
+                    new_entry = {
+                        "id": i + j + 1,
+                        "prompt": prompt_data.get("prompt", ""),
+                        "start_time": segment_info['start']
+                    }
+                    all_prompts.append(new_entry)
+
+        # Ensure we didn't miss any (or format/id fixup)
+        return all_prompts
+
 
 
 if __name__ == "__main__":
