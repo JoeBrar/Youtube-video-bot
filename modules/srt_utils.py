@@ -75,47 +75,109 @@ def parse_srt(file_path: Path):
 
 def group_srt_by_sentences(subtitles):
     """
-    Group subtitles into full sentences or meaningful segments.
+    Group subtitles into full sentences, splitting mid-subtitle if necessary.
     Returns list of dicts:
-    [{'text': 'Full sentence.', 'start': 0.0, 'end': 5.5, 'subtitles': [...]}, ...]
+    [{'text': 'Full sentence.', 'start': 0.0, 'end': 5.5}, ...]
     """
     segments = []
     current_segment = {
         'text': '',
         'start': None,
-        'end': None,
-        'subtitles': []
+        'end': None
     }
+
+    # Regex for sentence ending: period, question mark, or exclamation mark
+    # followed by a space and a capital letter, or end of string.
+    # We also handle quotes.
+    # This is a basic split; for more robustness we'd need NLTK but we want to avoid deps.
+    # We'll stick to a simple split on punctuation followed by space/end for now.
+    
+    def get_sentence_split_index(text):
+        """Find the index where a sentence likely ends."""
+        # Check for punctuation markers
+        matches = list(re.finditer(r'([.?!]["\']?)(\s+|$)', text))
+        for match in matches:
+            # Basic heuristic: ignore common abbreviations if simple logic needed
+            # For now, we assume standard punctuation is a split
+            # We return the END of the sentence (including punctuation)
+            return match.end(1)
+        return -1
 
     for sub in subtitles:
         text = sub['text']
+        start_time = sub['start']
+        end_time = sub['end']
+        duration = end_time - start_time
         
-        # Initialize start time if needed
-        if current_segment['start'] is None:
-            current_segment['start'] = sub['start']
-        
-        # Space handling
-        prefix = " " if current_segment['text'] and not current_segment['text'].endswith(" ") else ""
-        current_segment['text'] += prefix + text
-        
-        # Always update end time
-        current_segment['end'] = sub['end']
-        current_segment['subtitles'].append(sub)
-
-        # Check for sentence endings (. ? !)
-        # Ensure it's not an abbreviation like Mr. or Dr. (basic check)
-        if re.search(r'[.?!](?:["\']|)$', text):
-            # Basic heuristic: if it ends with punctuation, close the segment
-            segments.append(current_segment)
-            current_segment = {
-                'text': '',
-                'start': None,
-                'end': None,
-                'subtitles': []
-            }
+        # Process the text of this subtitle
+        while text:
+            # Initialize start time for the current segment if it's new
+            if current_segment['start'] is None:
+                current_segment['start'] = start_time
+            
+            split_idx = get_sentence_split_index(text)
+            
+            if split_idx != -1:
+                # Found a sentence ending in this subtitle block
+                sentence_part = text[:split_idx]
+                remaining_text = text[split_idx:].strip()
+                
+                # Append this part to the current segment
+                prefix = " " if current_segment['text'] and not current_segment['text'].endswith(" ") else ""
+                current_segment['text'] += prefix + sentence_part
+                
+                # Calculate the end time for this sentence
+                # Proportional to the length of text consumed from this subtitle
+                total_char_len = len(sub['text']) # Original length
+                # We need to approximate how much time this part took
+                # Note: this is an estimation. 
+                # If we are splitting "Hello. World", "Hello." took some % of the time.
+                # However we might have already consumed some of sub['text'] in previous loop?
+                # Actually, let's keep it simple: assume constant speaking rate within the subtitle block.
+                
+                # We need to know how much of the CURRENT 'text' variable (which shrinks) corresponds to time
+                # But 'text' is just a slice. We should use the ratio of (sentence_part / original_text_len) * duration
+                # But we might have multiple sentences. 
+                
+                # Let's track consumed time within this subtitle
+                # Or simpler: re-calculate ratio based on char counts of the parts we extract
+                
+                consumed_ratio = len(sentence_part) / len(text) if len(text) > 0 else 1
+                segment_duration = duration * consumed_ratio
+                
+                # The end time of this sentence is start_time + segment_duration
+                segment_end_time = start_time + segment_duration
+                current_segment['end'] = segment_end_time
+                
+                # Finalize the segment
+                segments.append(current_segment)
+                
+                # Reset for next segment
+                current_segment = {
+                    'text': '',
+                    'start': None,  # Will be set in next iteration
+                    'end': None
+                }
+                
+                # Update loop variables for the remaining text
+                text = remaining_text
+                start_time = segment_end_time # Next sentence starts where this one ended
+                duration = end_time - start_time # Remaining duration
+                
+                if duration < 0: duration = 0 # Safety
+                
+            else:
+                # No sentence split found, just append the rest
+                prefix = " " if current_segment['text'] and not current_segment['text'].endswith(" ") else ""
+                current_segment['text'] += prefix + text
+                
+                # Update the end time of the current segment to be the end of this subtitle
+                current_segment['end'] = end_time
+                text = "" # Done with this subtitle
 
     # Add any remaining text
     if current_segment['text']:
         segments.append(current_segment)
 
     return segments
+

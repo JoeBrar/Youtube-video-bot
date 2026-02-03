@@ -228,6 +228,13 @@ class ImageTabManager:
 
         # Count of existing gallery items when we started (to offset positions)
         self.initial_gallery_count: int = 0
+        
+        # Track processed gallery item IDs to avoid duplicates/re-processing
+        self.processed_ids: Set[str] = set()
+
+        # Track processed gallery item IDs to avoid duplicates/re-processing
+        # Uses URL as unique ID since we reverted to legacy logic without data-asset-id
+        self.seen_gallery_urls: Set[str] = set()
 
         # Lock for thread-safe operations
         self.lock = asyncio.Lock()
@@ -239,13 +246,24 @@ class ImageTabManager:
         await asyncio.sleep(3)
         await self._close_popups()
 
-        # Capture existing gallery count for position offset
-        self.initial_gallery_count = await self._get_gallery_count()
-        print(f"[Image Tab] Found {self.initial_gallery_count} existing images in gallery")
+        await self._close_popups()
 
-    async def submit_prompt(self, clip_number: int, prompt: str, max_retries: int = 3) -> bool:
+        # Capture existing gallery items to ignore them
+        initial_items = await self._get_gallery_items()
+        for item in initial_items:
+            if item.get('id'):
+                self.processed_ids.add(item['id'])
+                
+        print(f"[Image Tab] Found {len(initial_items)} existing images (IDs tracked)")
+
+    async def submit_prompt(self, clip_number: int, prompt: str, max_retries: int = 3, pre_wait_seconds: float = 0) -> bool:
         """Submit a prompt for image generation with retry logic for popup handling."""
         async with self.lock:
+            # Optional wait before starting interaction (useful for first image to let page settle)
+            if pre_wait_seconds > 0:
+                print(f"  [Image {clip_number}] Waiting {pre_wait_seconds}s before starting...")
+                await asyncio.sleep(pre_wait_seconds)
+
             for attempt in range(max_retries):
                 try:
                     print(f"  [Image {clip_number}] Submitting prompt..." + (f" (attempt {attempt + 1})" if attempt > 0 else ""))
@@ -311,6 +329,7 @@ class ImageTabManager:
         Returns list of clip numbers that completed (not including blocked ones).
         """
         async with self.lock:
+            # We need to check if we have any active submissions or history
             if not self.in_flight and not self.submission_order:
                 return []
 
@@ -324,7 +343,7 @@ class ImageTabManager:
                     return []
 
                 # Gallery is NEWEST FIRST (prepended), so our new items are at the START
-                # Take only as many items as we've submitted
+                # Take only as many items as we've submitted (tracked in submission_order)
                 num_submitted = len(self.submission_order)
                 our_items = gallery_items[:num_submitted]
 
@@ -344,7 +363,7 @@ class ImageTabManager:
 
                     clip_number = self.submission_order[submission_idx]
 
-                    # Skip if already processed
+                    # Skip if already processed (not in in_flight)
                     if clip_number not in self.in_flight:
                         continue
 
@@ -354,10 +373,22 @@ class ImageTabManager:
                         await self.mark_as_skipped(clip_number, error_text)
                         print(f"  [Image {clip_number}] BLOCKED: {error_text[:50]}")
                     elif item.get('imgSrc'):
-                        # This image completed successfully - get high-res URL
+                        # This image completed successfully
                         gallery_url = item['imgSrc']
+                        
+                        # DUPLICATE GUARD: If we've seen this URL before, it's an old image shuffled into this slot.
+                        # Skip it and wait for a new image to appear.
+                        if gallery_url in self.seen_gallery_urls:
+                            continue
+
+                        # Try to get high-res URL
                         highres_url = await self._get_highres_url_from_gallery(gallery_url)
+                        
                         self.completed[clip_number] = highres_url or gallery_url
+                        
+                        # Mark as seen so we don't use it again for another clip
+                        self.seen_gallery_urls.add(gallery_url)
+                        
                         del self.in_flight[clip_number]
                         completed_clips.append(clip_number)
                         print(f"  [Image {clip_number}] Generation completed!")
@@ -372,7 +403,8 @@ class ImageTabManager:
     async def _get_highres_url_from_gallery(self, gallery_url: str) -> Optional[str]:
         """Click a gallery image to get its high-res URL from the modal."""
         try:
-            # Find and click the image
+            # Find and click the image by matching SRC
+            # This logic from the repo is safer than generic selector clicking
             images = await self.page.query_selector_all('main img')
             target_img = None
             for img in images:
@@ -392,7 +424,7 @@ class ImageTabManager:
                 await self._close_popups()
                 return self._extract_original_image_url(gallery_url)
 
-            # Wait for high-res image to load
+            # Wait for high-res image to load in modal
             modal_img = await self.page.query_selector('[role="dialog"] img')
             highres_url = None
 
@@ -413,7 +445,8 @@ class ImageTabManager:
 
                 if not highres_url:
                     highres_url = await modal_img.get_attribute('src')
-
+                
+                # Cleanup URL
                 highres_url = self._extract_original_image_url(highres_url)
 
             await self.page.keyboard.press("Escape")
@@ -474,10 +507,19 @@ class ImageTabManager:
                     const card = cards[i];
                     if (!card || card.nodeType !== 1) continue;
 
+                    // Get Asset ID (Crucial for tracking unique images)
+                    // The card itself usually has data-asset-id, or a child div
+                    let assetId = card.getAttribute('data-asset-id');
+                    if (!assetId) {
+                        const innerDiv = card.querySelector('[data-asset-id]');
+                        if (innerDiv) assetId = innerDiv.getAttribute('data-asset-id');
+                    }
+
                     const img = card.querySelector('img');
                     const imgSrc = img ? img.src : null;
-                    const text = (card.innerText || '').toLowerCase();
-
+                    const altText = (img ? img.alt : '').toLowerCase(); // Capture alt text
+                    const text = (card.innerText || '').toLowerCase(); // This captures the prompt text displayed on the card. Error text usually here.
+                    
                     // Check if this is an error card
                     const hasImage = imgSrc && imgSrc.startsWith('http');
                     // Check for various error types:
@@ -493,9 +535,12 @@ class ImageTabManager:
 
                     results.push({
                         index: i,
+                        id: assetId,
                         isError: isError,
                         imgSrc: hasImage ? imgSrc : null,
-                        errorText: isError ? card.innerText.trim().substring(0, 100) : null
+                        errorText: isError ? card.innerText.trim().substring(0, 100) : null,
+                        promptText: text,
+                        altText: altText // Return alt text
                     });
                 }
                 return results;
@@ -505,7 +550,7 @@ class ImageTabManager:
             if items:
                 error_count = sum(1 for item in items if item.get('isError'))
                 image_count = sum(1 for item in items if item.get('imgSrc'))
-                print(f"    [Gallery] {len(items)} items: {image_count} images, {error_count} blocked")
+                # print(f"    [Gallery] {len(items)} items: {image_count} images, {error_count} blocked")
 
             return items or []
         except Exception as e:
@@ -703,7 +748,9 @@ class ImagePipelineProcessor:
 
                 self.state_manager.mark_image_started(clip_number)
 
-                success = await self.image_tab.submit_prompt(clip_number, prompt)
+                # Add 10s wait for the very first image to allow page to settle
+                pre_wait = 10 if clip_number == 1 else 0
+                success = await self.image_tab.submit_prompt(clip_number, prompt, pre_wait_seconds=pre_wait)
                 if success:
                     self.next_image_to_submit += 1
                     in_flight += 1

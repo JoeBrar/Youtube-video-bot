@@ -322,14 +322,9 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                     # No topic available for this channel
                     exhausted_channels.add(channel.id)
                     print(f"Channel {channel.name} has no more topics. Skipping in future rounds.")
-                    continue
+                else:
+                    video_count += 1
 
-                video_count += 1
-
-                # Exit after first video if single-video mode
-                if single_video:
-                    print("\n[SINGLE VIDEO MODE] One video completed. Exiting.")
-                    return
             except KeyboardInterrupt:
                 print("\n\nStopping continuous mode. Last video was saved.")
                 return
@@ -338,6 +333,11 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                 print("Continuing to next channel in 10 seconds...")
                 import time
                 time.sleep(10)
+            
+            # Exit after first video if single-video mode (regardless of success/failure)
+            if single_video:
+                print("\n[SINGLE VIDEO MODE] One video attempt completed. Exiting.")
+                return
 
 
 async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, resume_folder: Path = None, single_video: bool = False):
@@ -364,10 +364,9 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
     client = HiggsfieldClient(None, None)
 
     try:
-        print("\n[BROWSER] Starting persistent browser session...")
-        await client.connect()
-        print("[BROWSER] Browser connected - will reuse for all videos\n")
-
+        print("\n[BROWSER] Initializing persistent client (browser will open on demand)...")
+        # Client created but not checking connection yet - wait until first image generation needs it.
+        
         if resume_folder:
             # Resume the specified video first, then continue
             await resume_video(resume_folder, channel_manager, continue_after=not single_video, client=client)
@@ -519,7 +518,7 @@ def main():
         help="Only generate script and prompts, skip image generation"
     )
     parser.add_argument(
-        "--single-video",
+        "--single-video", "--single", "-s",
         action="store_true",
         help="Create only one video and exit (don't continue round-robin)"
     )

@@ -91,6 +91,8 @@ playwright install chromium
 # This will generate script, titles, description and STOP.
 python main.py
 python main.py --channel history_epoch
+# This generates a single video for that channel
+python main.py --channel history_epoch --single-video
 
 # Step 2: Add Voiceover
 # Generate your voiceover and save the .srt file as 'voiceover.srt'
@@ -99,7 +101,7 @@ python main.py --channel history_epoch
 # Step 3: Resume to Generate Prompts & Images
 # This reads the SRT, generates timed prompts, and starts image generation.
 python main.py --resume auto
-python main.py --resume history_epoch/video3
+python main.py --resume history_epoch/video3 --single-video
 
 # Other commands:
 # List videos

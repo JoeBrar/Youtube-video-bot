@@ -146,20 +146,20 @@ class MissingImageRetrier:
                     print(f"  WARNING: No prompt found for image {clip_number}, skipping...")
                     continue
 
+                # Calculate pre-wait
+                pre_wait = 10 if first_submission else 0
+
                 # Submit the prompt
-                success = await self.image_tab.submit_prompt(clip_number, prompt)
+                success = await self.image_tab.submit_prompt(clip_number, prompt, pre_wait_seconds=pre_wait)
 
                 if success:
                     in_progress[clip_number] = prompt
                     self.state_manager.mark_image_started(clip_number)
 
-
-                    # Wait longer after first submission
                     if first_submission:
-                        await asyncio.sleep(10)
                         first_submission = False
-                    else:
-                        await asyncio.sleep(1)
+                    
+                    await asyncio.sleep(1)
                 else:
                     # Submission failed, put back in queue
                     missing_queue.append(clip_number)

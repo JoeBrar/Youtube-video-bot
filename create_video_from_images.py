@@ -2,7 +2,7 @@
 How to Run
 
 Run the script by providing the path to your video folder:
-python create_video.py "output/history_epoch/video18"
+python create_video_from_images.py "output/history_epoch/video18"
 
 The final video will be saved as final_video.mp4 inside the video folder.
 """

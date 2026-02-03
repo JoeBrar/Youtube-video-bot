@@ -778,12 +778,12 @@
     {
       "video_id": 8,
       "topic": "The Weimar Hyperinflation: When Germans Needed Wheelbarrows of Cash to Buy Bread",
-      "used": false
+      "used": true
     },
     {
       "video_id": 9,
       "topic": "The Bretton Woods System: How America Became the World's Banker After WWII",
-      "used": false
+      "used": true
     },
     {
       "video_id": 10,
@@ -1061,6 +1061,210 @@
       "video_id": 30,
       "topic": "Oprah Winfrey: From Poverty to Billionaire Media Queen",
       "used": true
+    }
+  ],
+  "pov_daily_life": [
+    {
+      "video_id": 1,
+      "topic": "POV: You Wake Up as a Roman Soldier",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "POV: A Day Inside a Roman Apartment Building",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "POV: You Work as a Slave in Ancient Rome",
+      "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "POV: You’re a Street Vendor in Ancient Greece",
+      "used": true
+    },
+    {
+      "video_id": 5,
+      "topic": "POV: A Farmer’s Day in Ancient Egypt",
+      "used": false
+    },
+    {
+      "video_id": 6,
+      "topic": "POV: You’re a Medieval Peasant During Harvest",
+      "used": false
+    },
+    {
+      "video_id": 7,
+      "topic": "POV: A Day as a Medieval Blacksmith",
+      "used": false
+    },
+    {
+      "video_id": 8,
+      "topic": "POV: Life as a Servant in a Medieval Castle",
+      "used": false
+    },
+    {
+      "video_id": 9,
+      "topic": "POV: You’re a Child Growing Up in a Medieval Town",
+      "used": false
+    },
+    {
+      "video_id": 10,
+      "topic": "POV: A Day in a Medieval Marketplace",
+      "used": false
+    },
+    {
+      "video_id": 11,
+      "topic": "POV: You’re a Sailor on a Wooden Exploration Ship",
+      "used": false
+    },
+    {
+      "video_id": 12,
+      "topic": "POV: Life on a 1500s Trading Voyage",
+      "used": false
+    },
+    {
+      "video_id": 13,
+      "topic": "POV: You’re a Trader on the Silk Road",
+      "used": false
+    },
+    {
+      "video_id": 14,
+      "topic": "POV: Working at a Busy 1600s Harbor",
+      "used": false
+    },
+    {
+      "video_id": 15,
+      "topic": "POV: You Work in a 19th Century Factory",
+      "used": false
+    },
+    {
+      "video_id": 16,
+      "topic": "POV: Life as a Fisherman in an Old Coastal Village",
+      "used": false
+    },
+    {
+      "video_id": 17,
+      "topic": "POV: You’re a Messenger Before Modern Communication",
+      "used": false
+    },
+    {
+      "video_id": 18,
+      "topic": "POV: You Work in a Roman Bathhouse",
+      "used": false
+    },
+    {
+      "video_id": 19,
+      "topic": "POV: A Day Living in a Medieval Monastery",
+      "used": false
+    },
+    {
+      "video_id": 20,
+      "topic": "POV: Life as an Apprentice to an Early Doctor",
+      "used": false
+    }
+  ],
+  "dark_cinematic_history": [
+    {
+      "video_id": 1,
+      "topic": "The Siege of Leningrad: 900 Days of Hell",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "Sinking of the USS Indianapolis: Shark Infested Waters",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "The Great Fire of London: The City Burns",
+      "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "The Donner Party: Trapped in the Snow",
+      "used": false
+    },
+    {
+      "video_id": 5,
+      "topic": "Destruction of Pompeii: Buried Alive",
+      "used": false
+    },
+    {
+      "video_id": 6,
+      "topic": "The Black Death in Florence: No One Survived",
+      "used": false
+    },
+    {
+      "video_id": 7,
+      "topic": "The Shackleton Expedition: Stranded on Ice",
+      "used": false
+    },
+    {
+      "video_id": 8,
+      "topic": "The Batavia Shipwreck: Mutiny and Madness",
+      "used": false
+    },
+    {
+      "video_id": 9,
+      "topic": "Fall of Constantinople: The Walls Breached",
+      "used": false
+    },
+    {
+      "video_id": 10,
+      "topic": "The Sack of Rome (410 AD): The End of an Empire",
+      "used": false
+    },
+    {
+      "video_id": 11,
+      "topic": "The Spanish Inquisition: Terror and Torture",
+      "used": false
+    },
+    {
+      "video_id": 12,
+      "topic": "The Year Without a Summer: World in Darkness",
+      "used": false
+    },
+    {
+      "video_id": 13,
+      "topic": "Charge of the Light Brigade: Into the Valley of Death",
+      "used": false
+    },
+    {
+      "video_id": 14,
+      "topic": "The Great Irish Famine: The Hunger",
+      "used": false
+    },
+    {
+      "video_id": 15,
+      "topic": "Siege of Tenochtitlan: The Fall of the Aztecs",
+      "used": false
+    },
+    {
+      "video_id": 16,
+      "topic": "Napoleon's Retreat from Moscow: Frozen Death",
+      "used": false
+    },
+    {
+      "video_id": 17,
+      "topic": "The Munster Rebellion: A City Gone Mad",
+      "used": false
+    },
+    {
+      "video_id": 18,
+      "topic": "Sinking of the Titanic: The Freezing Atlantic",
+      "used": false
+    },
+    {
+      "video_id": 19,
+      "topic": "Krakatoa Eruption: The Loudest Sound in History",
+      "used": false
+    },
+    {
+      "video_id": 20,
+      "topic": "Dyatlov Pass Incident: Mystery on the Mountain",
+      "used": false
     }
   ]
 }
