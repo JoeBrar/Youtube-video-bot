@@ -1063,6 +1063,108 @@
       "used": true
     }
   ],
+  "dark_cinematic_history": [
+    {
+      "video_id": 1,
+      "topic": "The Siege of Leningrad: 900 Days of Hell",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "Sinking of the USS Indianapolis: Shark Infested Waters",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "The Great Fire of London: The City Burns",
+      "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "The Donner Party: Trapped in the Snow",
+      "used": false
+    },
+    {
+      "video_id": 5,
+      "topic": "Destruction of Pompeii: Buried Alive",
+      "used": false
+    },
+    {
+      "video_id": 6,
+      "topic": "The Black Death in Florence: No One Survived",
+      "used": false
+    },
+    {
+      "video_id": 7,
+      "topic": "The Shackleton Expedition: Stranded on Ice",
+      "used": false
+    },
+    {
+      "video_id": 8,
+      "topic": "The Batavia Shipwreck: Mutiny and Madness",
+      "used": false
+    },
+    {
+      "video_id": 9,
+      "topic": "Fall of Constantinople: The Walls Breached",
+      "used": false
+    },
+    {
+      "video_id": 10,
+      "topic": "The Sack of Rome (410 AD): The End of an Empire",
+      "used": false
+    },
+    {
+      "video_id": 11,
+      "topic": "The Spanish Inquisition: Terror and Torture",
+      "used": false
+    },
+    {
+      "video_id": 12,
+      "topic": "The Year Without a Summer: World in Darkness",
+      "used": false
+    },
+    {
+      "video_id": 13,
+      "topic": "Charge of the Light Brigade: Into the Valley of Death",
+      "used": false
+    },
+    {
+      "video_id": 14,
+      "topic": "The Great Irish Famine: The Hunger",
+      "used": false
+    },
+    {
+      "video_id": 15,
+      "topic": "Siege of Tenochtitlan: The Fall of the Aztecs",
+      "used": false
+    },
+    {
+      "video_id": 16,
+      "topic": "Napoleon's Retreat from Moscow: Frozen Death",
+      "used": false
+    },
+    {
+      "video_id": 17,
+      "topic": "The Munster Rebellion: A City Gone Mad",
+      "used": false
+    },
+    {
+      "video_id": 18,
+      "topic": "Sinking of the Titanic: The Freezing Atlantic",
+      "used": false
+    },
+    {
+      "video_id": 19,
+      "topic": "Krakatoa Eruption: The Loudest Sound in History",
+      "used": false
+    },
+    {
+      "video_id": 20,
+      "topic": "Dyatlov Pass Incident: Mystery on the Mountain",
+      "used": false
+    }
+  ],
   "pov_daily_life": [
     {
       "video_id": 1,
@@ -1165,106 +1267,31 @@
       "used": false
     }
   ],
-  "dark_cinematic_history": [
+  "history_survival_pov": [
     {
       "video_id": 1,
-      "topic": "The Siege of Leningrad: 900 Days of Hell",
+      "topic": "POV: You Wake Up During the Black Death",
       "used": true
     },
     {
       "video_id": 2,
-      "topic": "Sinking of the USS Indianapolis: Shark Infested Waters",
+      "topic": "POV: You Are a Gladiator on Fight Day",
       "used": true
     },
     {
       "video_id": 3,
-      "topic": "The Great Fire of London: The City Burns",
+      "topic": "POV: You Are Trapped in Pompeii When Volcano Erupts",
       "used": true
     },
     {
       "video_id": 4,
-      "topic": "The Donner Party: Trapped in the Snow",
-      "used": false
+      "topic": "POV: You Are a Villager When Vikings Attack",
+      "used": true
     },
     {
       "video_id": 5,
-      "topic": "Destruction of Pompeii: Buried Alive",
-      "used": false
-    },
-    {
-      "video_id": 6,
-      "topic": "The Black Death in Florence: No One Survived",
-      "used": false
-    },
-    {
-      "video_id": 7,
-      "topic": "The Shackleton Expedition: Stranded on Ice",
-      "used": false
-    },
-    {
-      "video_id": 8,
-      "topic": "The Batavia Shipwreck: Mutiny and Madness",
-      "used": false
-    },
-    {
-      "video_id": 9,
-      "topic": "Fall of Constantinople: The Walls Breached",
-      "used": false
-    },
-    {
-      "video_id": 10,
-      "topic": "The Sack of Rome (410 AD): The End of an Empire",
-      "used": false
-    },
-    {
-      "video_id": 11,
-      "topic": "The Spanish Inquisition: Terror and Torture",
-      "used": false
-    },
-    {
-      "video_id": 12,
-      "topic": "The Year Without a Summer: World in Darkness",
-      "used": false
-    },
-    {
-      "video_id": 13,
-      "topic": "Charge of the Light Brigade: Into the Valley of Death",
-      "used": false
-    },
-    {
-      "video_id": 14,
-      "topic": "The Great Irish Famine: The Hunger",
-      "used": false
-    },
-    {
-      "video_id": 15,
-      "topic": "Siege of Tenochtitlan: The Fall of the Aztecs",
-      "used": false
-    },
-    {
-      "video_id": 16,
-      "topic": "Napoleon's Retreat from Moscow: Frozen Death",
-      "used": false
-    },
-    {
-      "video_id": 17,
-      "topic": "The Munster Rebellion: A City Gone Mad",
-      "used": false
-    },
-    {
-      "video_id": 18,
-      "topic": "Sinking of the Titanic: The Freezing Atlantic",
-      "used": false
-    },
-    {
-      "video_id": 19,
-      "topic": "Krakatoa Eruption: The Loudest Sound in History",
-      "used": false
-    },
-    {
-      "video_id": 20,
-      "topic": "Dyatlov Pass Incident: Mystery on the Mountain",
-      "used": false
+      "topic": "POV: You Are a Pirate When the Royal Navy Finds You",
+      "used": true
     }
   ]
 }

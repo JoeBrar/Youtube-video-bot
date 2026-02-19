@@ -99,3 +99,10 @@ DEFAULT_TARGET_VIDEO_LENGTH_MINUTES = 20
 DEFAULT_TARGET_WORD_COUNT = 3000
 DEFAULT_IMAGES_PER_MINUTE = 4
 DEFAULT_IMAGE_STYLE_SUFFIX = "realistic, cinematic lighting, highly detailed, 16:9 aspect ratio, dramatic composition"
+
+# =============================================================================
+# WHISPER SETTINGS
+# =============================================================================
+WHISPER_MODEL_SIZE = "medium"
+WHISPER_DEVICE = "cuda"
+

@@ -74,12 +74,14 @@ I need you to create ONE detailed image prompt for EACH of the following script 
 {segments_text}
 
 REQUIREMENTS FOR EACH PROMPT:
-- Create imagery appropriate for {self.channel.niche} content
+- Create imagery appropriate for this niche : {self.channel.niche}
 - Include specific visual details (setting, characters, objects, lighting, atmosphere)
 - Describe the scene composition (foreground, background, perspective)
-- Make each image distinct and visually interesting
+- Make the images visually interesting
 - Add dramatic lighting and cinematic composition
+- Make sure to include the required context (such as the setting etc.) in each prompt. Because I will give the prompts to an AI image generator to generate images and the AI generator does not have the context of the other images. So each prompt should be independently self contained with all the required info so I get an accurate image.
 - End each prompt with: "{style_suffix}"
+- The image generator blocks NSFW. So make sure to avoid NSFW content including extreme violence, gore etc.
 
 IMPORTANT:
 - Each prompt should be 2-4 sentences, detailed but not overly long
@@ -89,8 +91,8 @@ IMPORTANT:
 Respond in this EXACT JSON format:
 {{
     "prompts": [
-        {{"segment_index": 1, "prompt": "your detailed image prompt here"}},
-        {{"segment_index": 2, "prompt": "your detailed image prompt here"}}
+        {{"segment_index": 1, "prompt": " "}},
+        {{"segment_index": 2, "prompt": " "}}
     ]
 }}
 

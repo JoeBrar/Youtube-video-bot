@@ -121,8 +121,8 @@ async def create_new_video(channel: Channel, topic: str = None, video_id: int = 
     print("=" * 60)
     print(f"\nVideo folder: {video_folder}")
     print("\nNEXT STEPS:")
-    print("1. Generate Voiceover and Subtitles (SRT) externally.")
-    print(f"2. Save the subtitle file as 'voiceover.srt' in the video folder.")
+    print("1. Generate Voiceover externally (ElevenLabs, OpenAI, etc).")
+    print(f"2. Save the audio file as 'voiceover.mp3' (or 'voiceover.srt') in the video folder.")
     print(f"3. Run: python main.py --resume {channel.id}/{video_folder.name}")
     print("\nThis will generate prompts from the SRT and then create images.")
     
@@ -234,10 +234,36 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
                 break
         
         if not srt_path:
-            print(f"\n[WAITING FOR VOICEOVER]")
-            print(f"Please place 'voiceover.srt' in: {video_folder}")
-            print(f"Then run resume again.")
-            return
+            # Check for audio file to transcribe
+            audio_candidates = ["voiceover.mp3", "voiceover.wav", "voiceover.m4a", "audio.mp3", "audio.wav"]
+            audio_path = None
+            for name in audio_candidates:
+                if (video_folder / name).exists():
+                    audio_path = video_folder / name
+                    break
+            
+            if audio_path:
+                print(f"\n[PHASE 2a] Auto-Transcribing Audio: {audio_path.name}")
+                print("Initializing Whisper model (this may take a moment)...")
+                try:
+                    from modules.audio_transcriber import AudioTranscriber
+                    transcriber = AudioTranscriber(
+                        model_size=config.WHISPER_MODEL_SIZE, 
+                        device=config.WHISPER_DEVICE
+                    )
+                    srt_content = transcriber.transcribe_file(audio_path)
+                    
+                    srt_path = video_folder / "voiceover.srt"
+                    transcriber.save_srt(srt_content, srt_path)
+                    print(f"Transcription complete. Saved to {srt_path.name}")
+                except Exception as e:
+                    print(f"ERROR during transcription: {e}")
+                    return
+            else:
+                print(f"\n[WAITING FOR VOICEOVER]")
+                print(f"Please place 'voiceover.mp3' (or .wav/.m4a) OR 'voiceover.srt' in: {video_folder}")
+                print(f"Then run resume again.")
+                return
 
         print(f"\n[PHASE 2] Generating Prompts from SRT: {srt_path.name}")
         prompt_gen = PromptGenerator(channel)
@@ -364,8 +390,9 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
     client = HiggsfieldClient(None, None)
 
     try:
-        print("\n[BROWSER] Initializing persistent client (browser will open on demand)...")
-        # Client created but not checking connection yet - wait until first image generation needs it.
+        print("\n[BROWSER] Starting persistent browser session...")
+        await client.connect()
+        print("[BROWSER] Browser connected - will reuse for all videos\n")
         
         if resume_folder:
             # Resume the specified video first, then continue
