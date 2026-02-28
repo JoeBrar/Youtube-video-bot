@@ -757,6 +757,11 @@
       "video_id": 34,
       "topic": "The Cuban Missile Crisis: 13 Days That Almost Ended the World",
       "used": true
+    },
+    {
+      "video_id": 35,
+      "topic": "Narrative-driven historical documentary that tells the story of the American P-51 Mustang through the eyes of the German pilots and engineers who encountered it during World War II.",
+      "used": true
     }
   ],
   "economic_nation": [
@@ -1188,8 +1193,8 @@
     },
     {
       "video_id": 5,
-      "topic": "POV: A Farmer’s Day in Ancient Egypt",
-      "used": false
+      "topic": "You are a farmer in ancient egypt",
+      "used": true
     },
     {
       "video_id": 6,
@@ -1280,7 +1285,7 @@
     },
     {
       "video_id": 3,
-      "topic": "POV: You Are Trapped in Pompeii When Volcano Erupts",
+      "topic": "POV: You Are in Pompeii When Volcano Erupts",
       "used": true
     },
     {
@@ -1292,6 +1297,58 @@
       "video_id": 5,
       "topic": "POV: You Are a Pirate When the Royal Navy Finds You",
       "used": true
+    }
+  ],
+  "history_locale": [
+    {
+      "video_id": 1,
+      "topic": "A Day in New York (New Amsterdam) – 1600s",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "A Day in Medieval London (1300s)",
+      "used": false
+    },
+    {
+      "video_id": 3,
+      "topic": "A Day in Ancient Rome (1st Century AD)",
+      "used": false
+    },
+    {
+      "video_id": 4,
+      "topic": "A Day in Ancient Athens (Golden Age of Greece)",
+      "used": false
+    },
+    {
+      "video_id": 5,
+      "topic": "A Day in Edo, Japan (Samurai Era)",
+      "used": false
+    },
+    {
+      "video_id": 6,
+      "topic": "A Day in Mughal Delhi (1600s India)",
+      "used": false
+    },
+    {
+      "video_id": 7,
+      "topic": "A Day in Viking-Age York (Jorvik)",
+      "used": false
+    },
+    {
+      "video_id": 8,
+      "topic": "A Day in Paris During the French Revolution",
+      "used": false
+    },
+    {
+      "video_id": 9,
+      "topic": "A Day in Industrial London (1800s)",
+      "used": false
+    },
+    {
+      "video_id": 10,
+      "topic": "A Day in Ancient Egypt (Thebes, 1300 BC)",
+      "used": false
     }
   ]
 }
