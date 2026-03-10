@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Copier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-label.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .stats.show {
+            display: block;
+        }
+
+        .stats p {
+            color: #555;
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .prompts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .prompt-card {
+            background: white;
+            padding: 5px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-left: 4px solid #667eea;
+        }
+
+        .prompt-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .prompt-card.copied {
+            background: #4fcd6d;
+            border-left-color: #28a745;
+        }
+
+        .prompt-card.copied:hover {
+            background: #62d87e;
+        }
+
+        .prompt-number {
+            font-size: 0.85rem;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .start-time {
+            font-weight: 400;
+            color: #888;
+        }
+
+        .prompt-card.copied .prompt-number {
+            color: #28a745;
+        }
+
+        .prompt-text {
+            color: #333;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .read-more-btn {
+            display: inline;
+            margin-left: 4px;
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .read-more-btn:hover {
+            color: #764ba2;
+        }
+
+        .prompt-card.copied .read-more-btn {
+            color: #28a745;
+        }
+
+        .copy-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #0d992d;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .prompt-card.copied .copy-indicator {
+            opacity: 1;
+        }
+
+        .no-prompts {
+            text-align: center;
+            color: white;
+            font-size: 1.1rem;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            color: #667eea;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.2s;
+            font-size: 1.5rem;
+        }
+
+        .scroll-top.show {
+            opacity: 1;
+        }
+
+        .scroll-top:hover {
+            transform: scale(1.1);
+        }
+
+        .expand-all-btn {
+            display: none;
+            margin: 0 auto 20px auto;
+            padding: 10px 24px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.03em;
+        }
+
+        .expand-all-btn.visible {
+            display: block;
+        }
+
+        .expand-all-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📝 Prompt Copier</h1>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="jsonFile" accept=".json">
+                <label for="jsonFile" class="file-label">
+                    📁 Upload JSON File (or drag & drop)
+                </label>
+            </div>
+
+            <div class="stats" id="stats">
+                <p><strong>Channel:</strong> <span id="channelName">-</span></p>
+                <p><strong>Topic:</strong> <span id="topicName">-</span></p>
+                <p><strong>Total Prompts:</strong> <span id="totalPrompts">-</span></p>
+                <p><strong>Copied:</strong> <span id="copiedCount">0</span></p>
+            </div>
+        </div>
+
+        <button class="expand-all-btn" id="expandAllBtn">⤢ Expand All</button>
+
+        <div id="promptsList" class="prompts-container"></div>
+
+        <p class="no-prompts" id="noPrompts">Upload a JSON file to see prompts</p>
+    </div>
+
+    <div class="scroll-top" id="scrollTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        ↑
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('jsonFile');
+        const promptsList = document.getElementById('promptsList');
+        const noPrompts = document.getElementById('noPrompts');
+        const stats = document.getElementById('stats');
+        const channelName = document.getElementById('channelName');
+        const topicName = document.getElementById('topicName');
+        const totalPrompts = document.getElementById('totalPrompts');
+        const copiedCount = document.getElementById('copiedCount');
+        const scrollTop = document.getElementById('scrollTop');
+        const expandAllBtn = document.getElementById('expandAllBtn');
+
+        let copiedPrompts = new Set();
+        let allExpandable = []; // { btn, textEl, promptText, shortText }
+        let allExpanded = false;
+
+        expandAllBtn.addEventListener('click', () => {
+            allExpanded = !allExpanded;
+            allExpandable.forEach(({ btn, textEl, promptText, shortText }) => {
+                textEl.firstChild.textContent = allExpanded ? promptText + ' ' : shortText;
+                btn.textContent = allExpanded ? 'Read less' : 'Read more';
+            });
+            expandAllBtn.textContent = allExpanded ? '⤡ Compact All' : '⤢ Expand All';
+        });
+
+        const fileLabel = document.querySelector('.file-label');
+
+        fileInput.addEventListener('change', handleFileUpload);
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, unhighlight, false);
+        });
+
+        fileLabel.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight() {
+            fileLabel.classList.add('drag-over');
+            fileLabel.textContent = '📁 Drop JSON file here';
+        }
+
+        function unhighlight() {
+            fileLabel.classList.remove('drag-over');
+            fileLabel.textContent = '📁 Upload JSON File (or drag & drop)';
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                    readFile(file);
+                } else {
+                    alert('Please upload a JSON file');
+                }
+            }
+        }
+
+        function readFile(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    displayPrompts(data);
+                } catch (error) {
+                    alert('Error parsing JSON file. Please make sure it\'s a valid JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollTop.classList.add('show');
+            } else {
+                scrollTop.classList.remove('show');
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            readFile(file);
+        }
+
+        function displayPrompts(data) {
+            promptsList.innerHTML = '';
+            copiedPrompts.clear();
+            updateCopiedCount();
+
+            if (data.channel) channelName.textContent = data.channel;
+            if (data.topic) topicName.textContent = data.topic;
+
+            let prompts = [];
+            if (data.prompts && Array.isArray(data.prompts)) {
+                prompts = data.prompts;
+            } else if (Array.isArray(data)) {
+                prompts = data;
+            }
+
+            totalPrompts.textContent = prompts.length;
+            stats.classList.add('show');
+
+            if (prompts.length === 0) {
+                noPrompts.style.display = 'block';
+                return;
+            }
+
+            noPrompts.style.display = 'none';
+
+            allExpandable = [];
+            allExpanded = false;
+            expandAllBtn.textContent = '⤢ Expand All';
+
+            const TRUNCATE_LENGTH = 150;
+
+            prompts.forEach((item, index) => {
+                const promptText = item.prompt || item.text || item;
+                const promptId = item.id || index + 1;
+                const isLong = promptText.length > TRUNCATE_LENGTH;
+
+                const card = document.createElement('div');
+                card.className = 'prompt-card';
+                card.dataset.id = promptId;
+                card.dataset.prompt = promptText;
+
+                const shortText = isLong ? promptText.slice(0, TRUNCATE_LENGTH) + '…' : promptText;
+
+                const startTimeStr = item.start_time != null ? `<span class="start-time"> • ${formatTime(item.start_time)}</span>` : '';
+
+                card.innerHTML = `
+                    <div class="prompt-number">Prompt #${promptId}${startTimeStr}</div>
+                    <div class="prompt-text">${escapeHtml(shortText)}${isLong ? ' <button class="read-more-btn">Read more</button>' : ''}</div>
+                    <span class="copy-indicator">Copied!</span>
+                `;
+
+                if (isLong) {
+                    const btn = card.querySelector('.read-more-btn');
+                    const textEl = card.querySelector('.prompt-text');
+                    let expanded = false;
+
+                    const entry = { btn, textEl, promptText, shortText };
+                    allExpandable.push(entry);
+
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // don't trigger copy
+                        expanded = !expanded;
+                        textEl.firstChild.textContent = expanded ? promptText + ' ' : shortText;
+                        btn.textContent = expanded ? 'Read less' : 'Read more';
+                    });
+                }
+
+                // Show expand-all button if there's at least one long prompt
+                if (allExpandable.length > 0) expandAllBtn.classList.add('visible');
+                else expandAllBtn.classList.remove('visible');
+
+                card.addEventListener('click', () => copyPrompt(card));
+                promptsList.appendChild(card);
+            });
+        }
+
+        function copyPrompt(card) {
+            const promptText = card.dataset.prompt;
+
+            navigator.clipboard.writeText(promptText).then(() => {
+                card.classList.add('copied');
+                copiedPrompts.add(card.dataset.id);
+                updateCopiedCount();
+            }).catch(err => {
+                const textarea = document.createElement('textarea');
+                textarea.value = promptText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                card.classList.add('copied');
+                copiedPrompts.add(card.dataset.id);
+                updateCopiedCount();
+            });
+        }
+
+        function updateCopiedCount() {
+            copiedCount.textContent = copiedPrompts.size;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.round((seconds % 1) * 100);
+            return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+
+</html>
