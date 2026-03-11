@@ -134,7 +134,7 @@
     "content_guidelines": "Use engaging storytelling that hooks the viewer and keeps them watching.",
     "topic_categories": [
       "World War I battles and events",
-      "World War II major operations",
+      "World War II major operations and events",
       "Cold War tensions and proxy wars",
       "Civil War battles and figures",
       "Revolutionary War and independence movements",
@@ -155,7 +155,6 @@
     "target_video_length_minutes": 20,
     "target_word_count": 3000,
     "images_per_minute": 8,
-    "clips_per_minute": 7.5,
     "enable_web_search": false,
     "temperature": 0.7
   },
@@ -246,7 +245,6 @@
     "target_video_length_minutes": 18,
     "target_word_count": 2700,
     "images_per_minute": 8,
-    "clips_per_minute": 7.5,
     "enable_web_search": false,
     "temperature": 0.7
   },
@@ -298,7 +296,6 @@
     "target_video_length_minutes": 18,
     "target_word_count": 2700,
     "images_per_minute": 8,
-    "clips_per_minute": 7.5,
     "enable_web_search": false,
     "temperature": 0.7
   },
@@ -334,7 +331,60 @@
     "target_video_length_minutes": 20,
     "target_word_count": 3000,
     "images_per_minute": 8,
-    "clips_per_minute": 7.5,
+    "enable_web_search": false,
+    "temperature": 0.7
+  },
+  {
+    "id": "jack_shows_history",
+    "name": "Jack Shows History",
+    "niche": "immersive historical city and place reconstructions",
+    "description": "Faceless, cinematic history channel that uses AI-generated visuals and voiceover to transport viewers into real places and moments from the past. Each video recreates what it may have felt like to walk through historical cities, landmarks, civilizations, and events across different time periods. The visuals should feel realistic, historically accurate, and closely matched to the narration at every moment. The scripts should be highly engaging, immersive, and easy to follow so the viewer stays hooked throughout.",
+    "content_guidelines": "Every video must feel immersive, realistic, and historically grounded. The narration should be engaging from the start, with a strong hook in the first 30 seconds. Visuals must closely match the voiceover beat by beat and help the viewer feel present inside that historical setting.",
+    "topic_categories": [
+      "ancient cities and civilizations (Rome, Athens, Alexandria, Babylon, Pataliputra, Chang'an)",
+      "medieval cities and kingdoms (London, Constantinople, Cairo, Baghdad, Kyoto, Delhi)",
+      "early modern cities and empires (Venice, Istanbul, Edo, Mughal cities, Renaissance Florence)",
+      "streets, markets, ports, and public spaces in history",
+      "famous landmarks and monuments in their original time period",
+      "daily life in historical cities and settlements",
+      "life during major wars, invasions, sieges, and conflicts",
+      "historical events experienced from ground level",
+      "rise and fall of cities, empires, and civilizations",
+      "trade routes, harbors, caravans, and travel hubs",
+      "religion, rituals, festivals, and public ceremonies",
+      "architecture, infrastructure, and urban life in the past",
+      "forgotten places, lost cities, and vanished worlds",
+      "important rulers, soldiers, merchants, workers, and ordinary people in historical settings",
+      "anything else you can think of"
+    ],
+    "image_style_suffix": "realistic, historically accurate, immersive, NO text, NO spoken dialog, NO NSFW, NO letterboxing",
+    "target_video_length_minutes": 22,
+    "target_word_count": 3300,
+    "images_per_minute": 8,
+    "enable_web_search": false,
+    "temperature": 0.7
+  },
+  {
+    "id": "ww2_empire",
+    "name": "WW2 Empire",
+    "niche": "long-form modern war history storytelling",
+    "description": "Faceless, cinematic long-form war history channel focused on World War 1 and World War 2. The videos tell gripping, immersive stories about battles, operations, soldiers, generals, weapons, vehicles, logistics, tactics, turning points, and major historical events. Each video should feel dramatic, realistic, historically grounded, and visually immersive, with AI-generated visuals matching the narration throughout. The storytelling should keep the viewer engaged from beginning to end and make complex war history feel intense, understandable, and memorable.",
+    "content_guidelines": "Every video must be historically grounded, realistic, and emotionally engaging. The script should open with a strong hook in the first 30 seconds, then unfold like a compelling war story with tension, stakes, and clear progression. Focus on vivid storytelling, strong pacing, and meaningful historical insight. Visuals should match the narration closely and help the viewer experience the event, operation, or situation as it unfolds.",
+    "topic_categories": [
+      "World War 1 and 2 battles and campaigns",
+      "military operations, offensives, and turning points",
+      "generals, soldiers, and personal war stories",
+      "weapons, vehicles, and wartime technology",
+      "strategy, tactics, logistics, and supply lines",
+      "intelligence, espionage, and deception",
+      "disasters, retreats, encirclements, and last stands",
+      "lesser-known but fascinating wartime stories",
+      "anything else you can think of"
+    ],
+    "image_style_suffix": "realistic historical reconstruction, muted desaturated wartime tones, soft lens, historically accurate, NO text, NO spoken dialog, NO NSFW, NO letterboxing",
+    "target_video_length_minutes": 45,
+    "target_word_count": 6500,
+    "images_per_minute": 7,
     "enable_web_search": false,
     "temperature": 0.7
   }

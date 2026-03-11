@@ -1350,5 +1350,79 @@
       "topic": "A Day in Ancient Egypt (Thebes, 1300 BC)",
       "used": true
     }
+  ],
+  "jack_shows_history": [
+    {
+      "video_id": 1,
+      "topic": "A Day in Nassau in 1717: The Pirate Republic at Its Peak",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "A Day in Ancient Rome at the Height of the Empire",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "Walking Through Constantinople Before Its Fall",
+      "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "A Day in Baghdad During the Islamic Golden Age",
+      "used": true
+    },
+    {
+      "video_id": 5,
+      "topic": "What Medieval London Really Looked Like",
+      "used": true
+    },
+    {
+      "video_id": 6,
+      "topic": "A Journey Through Ancient Alexandria at Its Peak",
+      "used": true
+    },
+    {
+      "video_id": 7,
+      "topic": "Inside Tenochtitlan Before the Spanish Arrived",
+      "used": true
+    },
+    {
+      "video_id": 8,
+      "topic": "A Day in Edo Japan When the City Ruled the World",
+      "used": true
+    },
+    {
+      "video_id": 9,
+      "topic": "Walking the Streets of Pompeii Before the Eruption",
+      "used": true
+    },
+    {
+      "video_id": 10,
+      "topic": "What It Was Like in Venice at the Height of Its Power",
+      "used": true
+    },
+    {
+      "video_id": 11,
+      "topic": "Exploring Babylon in the Age of Its Great Kings",
+      "used": true
+    }
+  ],
+  "ww2_empire": [
+    {
+      "video_id": 1,
+      "topic": "German Colonel Captured 50,000 Gallons of US Fuel and Realized Germany Was Doomed",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "",
+      "used": true
+    }
   ]
 }

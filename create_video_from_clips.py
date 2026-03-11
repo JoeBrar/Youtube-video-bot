@@ -11,7 +11,8 @@ Usage:
 The script expects:
     - <video_path>/prompts.json   (with id & start_time fields)
     - <video_path>/clips/         (with clip_001.mp4, clip_002.mp4, etc.)
-    - <video_path>/voiceover.mp3  (used only to determine total video duration)
+    - <video_path>/voiceover.mp3 or <video_path>/voiceover.wav
+      (used only to determine total video duration)
 
 Output:
     - <video_path>/final_video.mp4
@@ -25,6 +26,15 @@ import subprocess
 import sys
 import tempfile
 import shutil
+
+
+def find_voiceover_file(video_path):
+    """Return the first supported voiceover file found in the video folder."""
+    for filename in ("voiceover.mp3", "voiceover.wav"):
+        filepath = os.path.join(video_path, filename)
+        if os.path.exists(filepath):
+            return filepath
+    return None
 
 
 def get_media_duration(filepath):
@@ -153,12 +163,18 @@ def main():
     # Validate paths
     prompts_path = os.path.join(video_path, "prompts.json")
     clips_dir = os.path.join(video_path, "clips")
-    voiceover_path = os.path.join(video_path, "voiceover.mp3")
+    voiceover_path = find_voiceover_file(video_path)
 
-    for path, label in [(prompts_path, "prompts.json"), (clips_dir, "clips/"), (voiceover_path, "voiceover.mp3")]:
+    for path, label in [(prompts_path, "prompts.json"), (clips_dir, "clips/")]:
         if not os.path.exists(path):
             print(f"Error: {label} not found at {path}")
             sys.exit(1)
+    if not voiceover_path:
+        print(
+            f"Error: voiceover file not found in {video_path}. "
+            "Expected voiceover.mp3 or voiceover.wav"
+        )
+        sys.exit(1)
 
     # Load prompts
     with open(prompts_path, "r", encoding="utf-8") as f:
@@ -170,6 +186,7 @@ def main():
 
     # Get voiceover duration (= total video duration)
     total_duration = get_media_duration(voiceover_path)
+    print(f"Voiceover file: {os.path.basename(voiceover_path)}")
     print(f"Voiceover duration: {total_duration:.2f}s")
 
     # Scan for existing clips
