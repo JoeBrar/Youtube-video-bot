@@ -177,13 +177,17 @@ def fetch_all_project_clips(page, project_index: int) -> list[dict]:
     # Step 2: Get child posts from the initial response (may be incomplete)
     initial_children = project.get("childPosts", [])
     
+    # Always extract the parent project post (holds the first submitted prompt's clip)
+    parent_clip = None
+    parent_prompt = project.get("prompt", "")
+    parent_media = project.get("mediaUrl", "")
+    parent_id = project.get("id", "")
+    if parent_prompt and parent_id:
+        parent_clip = {"id": parent_id, "prompt": parent_prompt, "mediaUrl": parent_media}
+    
     if not initial_children:
-        # Single clip project
-        prompt = project.get("prompt", "")
-        media_url = project.get("mediaUrl", "")
-        post_id = project.get("id", "")
-        if prompt and post_id:
-            return [{"id": post_id, "prompt": prompt, "mediaUrl": media_url}]
+        if parent_clip:
+            return [parent_clip]
         print("No clips found in this project.")
         return []
     
@@ -248,6 +252,11 @@ def fetch_all_project_clips(page, project_index: int) -> list[dict]:
     
     clips = []
     seen_ids = set()
+    # Add parent project clip first (holds the first submitted prompt's clip)
+    if parent_clip:
+        clips.append(parent_clip)
+        seen_ids.add(parent_clip["id"])
+    
     for cp in child_posts:
         clip_id = cp.get("id", "")
         if clip_id and clip_id not in seen_ids:

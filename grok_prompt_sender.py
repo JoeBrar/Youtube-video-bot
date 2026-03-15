@@ -29,7 +29,7 @@ from playwright.sync_api import sync_playwright
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 GROK_IMAGINE_URL = "https://grok.com/imagine"
-DEFAULT_DELAY = 5       # Seconds between prompts
+DEFAULT_DELAY = 6       # Seconds between prompts
 DEFAULT_PROMPTS = "prompts.json"
 
 # ── Selectors (from live Grok Imagine page inspection) ─────────────────────────

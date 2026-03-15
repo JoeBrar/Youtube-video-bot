@@ -387,5 +387,34 @@
     "images_per_minute": 7,
     "enable_web_search": false,
     "temperature": 0.7
+  },
+  {
+    "id": "stickman_history",
+    "name": "Stickman History",
+    "niche": "top 10 historical rankings",
+    "description": "Faceless AI history channel focused on engaging Top 10 rankings across all periods of history. Videos cover battles, sieges, cities, empires, leaders, trade, and major historical events. 2D animation style.",
+    "content_guidelines": "Open with a strong hook. Each entry should tell very engaging and interesting for the viewer. simple 2D flat cartoon animation style, minimalist vector illustration, thick clean outlines, storybook style.",
+    "topic_categories": [
+      "top 10 battles in history",
+      "top 10 sieges of all time",
+      "top 10 greatest military commanders",
+      "top 10 most powerful empires",
+      "top 10 richest ancient cities",
+      "top 10 most important trade routes",
+      "top 10 naval battles",
+      "top 10 famous historical leaders",
+      "top 10 deadliest wars",
+      "top 10 legendary warriors",
+      "top 10 greatest explorers",
+      "top 10 turning points in history",
+      "top 10 lost cities and civilizations",
+      "anything else you can think of"
+    ],
+    "image_style_suffix": " simple flat 2D cartoon illustration, minimalist vector animation style, thick clean outlines, soft pastel colors, storybook style, NO spoken dialog, NO NSFW, NO letterboxing",
+    "target_video_length_minutes": 20,
+    "target_word_count": 3000,
+    "images_per_minute": 7,
+    "enable_web_search": false,
+    "temperature": 0.7
   }
 ]

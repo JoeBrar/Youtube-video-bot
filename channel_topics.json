@@ -1380,7 +1380,7 @@
     {
       "video_id": 6,
       "topic": "A Journey Through Ancient Alexandria at Its Peak",
-      "used": true
+      "used": false
     },
     {
       "video_id": 7,
@@ -1412,6 +1412,23 @@
     {
       "video_id": 1,
       "topic": "German Colonel Captured 50,000 Gallons of US Fuel and Realized Germany Was Doomed",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "",
+      "used": true
+    }
+  ],
+  "stickman_history": [
+    {
+      "video_id": 1,
+      "topic": "top 10 richest ancient cities",
       "used": true
     },
     {
