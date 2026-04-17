@@ -425,7 +425,13 @@ IMPORTANT:
 Write the complete script now:"""
 
         script = self.client.generate(prompt)
-        return clean_ai_text(script)
+        cleaned_script = clean_ai_text(script)
+        
+        # Remove double/multiple line breaks so paragraphs come one after the other
+        import re
+        cleaned_script = re.sub(r'\n{2,}', '\n', cleaned_script)
+        
+        return cleaned_script
 
     def generate_titles(self, topic: str, script: str) -> list[str]:
         """Generate catchy YouTube title ideas."""

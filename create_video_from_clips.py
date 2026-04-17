@@ -11,8 +11,8 @@ Usage:
 The script expects:
     - <video_path>/prompts.json   (with id & start_time fields)
     - <video_path>/clips/         (with clip_001.mp4, clip_002.mp4, etc.)
-    - <video_path>/voiceover.mp3 or <video_path>/voiceover.wav
-      (used only to determine total video duration)
+    - <video_path>/voiceover.mp3, <video_path>/voiceover.wav, or <video_path>/voiceover.mp4
+      (used only to determine total video duration; mp4 will be extracted to mp3)
 
 Output:
     - <video_path>/final_video.mp4
@@ -28,8 +28,35 @@ import tempfile
 import shutil
 
 
+def extract_audio_if_needed(video_path):
+    """Check if voiceover.mp4 exists without an audio counterpart. If so, extract audio."""
+    mp4_path = os.path.join(video_path, "voiceover.mp4")
+    mp3_path = os.path.join(video_path, "voiceover.mp3")
+    wav_path = os.path.join(video_path, "voiceover.wav")
+
+    if os.path.exists(mp3_path) or os.path.exists(wav_path):
+        return  # Already have an audio file
+
+    if os.path.exists(mp4_path):
+        print(f"Found voiceover.mp4, extracting audio to voiceover.mp3...")
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", mp4_path,
+            "-vn",          # no video
+            "-acodec", "libmp3lame",
+            "-q:a", "2",    # good quality VBR
+            mp3_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Error extracting audio from {mp4_path}:\n{result.stderr}")
+            sys.exit(1)
+        print("Audio extraction complete.")
+
+
 def find_voiceover_file(video_path):
-    """Return the first supported voiceover file found in the video folder."""
+    """Return the first supported voiceover file found in the video folder. Extracts mp4 to mp3 if needed."""
+    extract_audio_if_needed(video_path)
     for filename in ("voiceover.mp3", "voiceover.wav"):
         filepath = os.path.join(video_path, filename)
         if os.path.exists(filepath):
@@ -172,7 +199,7 @@ def main():
     if not voiceover_path:
         print(
             f"Error: voiceover file not found in {video_path}. "
-            "Expected voiceover.mp3 or voiceover.wav"
+            "Expected voiceover.mp3, voiceover.wav, or voiceover.mp4"
         )
         sys.exit(1)
 

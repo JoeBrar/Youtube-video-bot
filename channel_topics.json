@@ -1337,17 +1337,17 @@
     },
     {
       "video_id": 8,
-      "topic": "A Day in Paris During the French Revolution",
-      "used": true
-    },
-    {
-      "video_id": 9,
       "topic": "A Day in Industrial London (1800s)",
       "used": true
     },
     {
-      "video_id": 10,
+      "video_id": 9,
       "topic": "A Day in Ancient Egypt (Thebes, 1300 BC)",
+      "used": true
+    },
+    {
+      "video_id": 10,
+      "topic": "A Day in Paris During the French Revolution (1789)",
       "used": true
     }
   ],
@@ -1416,6 +1416,23 @@
     },
     {
       "video_id": 2,
+      "topic": "Why the Tiger Tank Terrified Everyone… and Still Failed",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "Pearl Harbor From the Japanese Pilots Perspective",
+      "used": true
+    }
+  ],
+  "stickman_history": [
+    {
+      "video_id": 1,
+      "topic": "top 10 richest ancient cities",
+      "used": true
+    },
+    {
+      "video_id": 2,
       "topic": "",
       "used": true
     },
@@ -1425,10 +1442,44 @@
       "used": true
     }
   ],
-  "stickman_history": [
+  "bible_dynamics": [
     {
       "video_id": 1,
-      "topic": "top 10 richest ancient cities",
+      "topic": "Noah and the Great Flood",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "Story of Moses and when he parted the red sea",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "the 10 plagues of egypt",
+      "used": true
+    }
+  ],
+  "greek_mythos": [
+    {
+      "video_id": 1,
+      "topic": "The Rise of Zeus — How He Defeated the Titans",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "Prometheus — The Titan Who Stole Fire From the Gods",
+      "used": true
+    },
+    {
+      "video_id": 3,
+      "topic": "",
+      "used": true
+    }
+  ],
+  "norse_mythos": [
+    {
+      "video_id": 1,
+      "topic": "The Creation of the Nine Realms (Ymir Story)",
       "used": true
     },
     {

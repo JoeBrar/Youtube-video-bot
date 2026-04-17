@@ -79,7 +79,7 @@ POLL_INTERVAL = 5000  # Check every 5 seconds for completion
 # OpenAI models: "gpt-5.2", "gpt-5.1", "gpt-5", "gpt-4o", etc.
 OPENAI_MODEL = "gpt-5.2"
 
-# Gemini models: "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-1.5-flash", etc.
+# Gemini models: "gemini-3-flash-preview", "gemini-3.1-pro-preview", "gemini-2.5-flash", "gemini-1.5-flash", etc.
 GEMINI_MODEL = "gemini-3.1-pro-preview"
 
 # Grok models: "grok-3", "grok-2", etc.
