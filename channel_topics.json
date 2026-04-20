@@ -1457,6 +1457,16 @@
       "video_id": 3,
       "topic": "the 10 plagues of egypt",
       "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "David vs Goliath story",
+      "used": true
+    },
+    {
+      "video_id": 5,
+      "topic": "Jonah and the Great Fish",
+      "used": true
     }
   ],
   "greek_mythos": [
@@ -1484,12 +1494,12 @@
     },
     {
       "video_id": 2,
-      "topic": "",
+      "topic": "How Thor got the Mjolnir",
       "used": true
     },
     {
       "video_id": 3,
-      "topic": "",
+      "topic": "Baldur and his death",
       "used": true
     }
   ]

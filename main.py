@@ -267,7 +267,8 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
 
         print(f"\n[PHASE 2] Generating Prompts from SRT: {srt_path.name}")
         prompt_gen = PromptGenerator(channel)
-        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path)
+        existing_prompts = files.load_prompts()
+        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path, existing_prompts=existing_prompts, save_callback=files.save_prompts)
         files.save_prompts(prompts)
 
         state.set_script_info(
@@ -672,7 +673,8 @@ def main():
             sys.exit(1)
 
         prompt_gen = PromptGenerator(channel)
-        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path)
+        existing_prompts = files.load_prompts()
+        prompts = prompt_gen.generate_prompts_from_srt(topic, srt_path, existing_prompts=existing_prompts, save_callback=files.save_prompts)
         files.save_prompts(prompts)
         
         # Update state
@@ -746,7 +748,8 @@ def main():
             # Generate and save prompts
             print("Generating image prompts...")
             prompt_gen = PromptGenerator(channel)
-            prompts = prompt_gen.generate_all_prompts(topic, script)
+            existing_prompts = files.load_prompts()
+            prompts = prompt_gen.generate_all_prompts(topic, script, existing_prompts=existing_prompts, save_callback=files.save_prompts)
             files.save_prompts(prompts)
 
             state.set_script_info(word_count, duration, len(prompts))

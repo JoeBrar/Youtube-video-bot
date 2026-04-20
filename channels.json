@@ -410,7 +410,7 @@
       "top 10 lost cities and civilizations",
       "anything else you can think of"
     ],
-    "image_style_suffix": " simple flat 2D cartoon illustration, minimalist vector animation style, thick clean outlines, soft pastel colors, storybook style, NO spoken dialog, NO NSFW, NO letterboxing",
+    "image_style_suffix": " simple flat 2D cartoon illustration, minimalist vector animation style, thick clean outlines, soft pastel colors, storybook style, NO spoken dialog, NO NSFW, no nudity, NO letterboxing",
     "target_video_length_minutes": 22,
     "target_word_count": 3300,
     "images_per_minute": 7,
@@ -450,9 +450,9 @@
       "Book of Revelation visual storytelling",
       "any other major or lesser-known Bible stories"
     ],
-    "image_style_suffix": "realistic, biblical scenes, no text, no NSFW",
-    "target_video_length_minutes": 22,
-    "target_word_count": 3200,
+    "image_style_suffix": "realistic, biblical scenes, no text, no NSFW, no nudity",
+    "target_video_length_minutes": 20,
+    "target_word_count": 3000,
     "images_per_minute": 7,
     "enable_web_search": false,
     "temperature": 0.7
@@ -475,8 +475,8 @@
       "journeys and epic adventures",
       "lesser-known Greek mythology stories"
     ],
-    "image_style_suffix": "realistic, Greek mythology scenes, no text, no NSFW",
-    "target_video_length_minutes": 22,
+    "image_style_suffix": "realistic, Greek mythology scenes, no text, no NSFW, no nudity",
+    "target_video_length_minutes": 20,
     "target_word_count": 3000,
     "images_per_minute": 7,
     "enable_web_search": false,
@@ -500,9 +500,9 @@
       "myths involving Loki and trickster chaos",
       "lesser-known Norse mythology stories"
     ],
-    "image_style_suffix": "realistic, Norse mythology scenes, no text, no NSFW",
-    "target_video_length_minutes": 22,
-    "target_word_count": 3200,
+    "image_style_suffix": "realistic, Norse mythology scenes, no text, no NSFW, no nudity",
+    "target_video_length_minutes": 20,
+    "target_word_count": 3000,
     "images_per_minute": 7,
     "enable_web_search": false,
     "temperature": 0.7

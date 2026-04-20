@@ -153,18 +153,24 @@ Generate the prompts now:"""
 
         return prompts
 
-    def generate_all_prompts(self, topic: str, script: str) -> list[dict]:
+    def generate_all_prompts(self, topic: str, script: str, existing_prompts: list[dict] = None, save_callback = None) -> list[dict]:
         """Generate all image prompts for the entire script."""
+        existing_prompts = existing_prompts or []
         num_images = self.calculate_required_images(script)
         print(f"Generating {num_images} image prompts...")
 
+        all_prompts = existing_prompts.copy()
+        if len(all_prompts) >= num_images:
+            print("All prompts already generated.")
+            return all_prompts[:num_images]
+
         segments = self.segment_script(script, num_images)
-        all_prompts = []
         style_suffix = self.channel.image_style_suffix
 
         # Process in batches of 10 to avoid token limits
         batch_size = 10
-        for i in range(0, len(segments), batch_size):
+        start_index = len(all_prompts)
+        for i in range(start_index, len(segments), batch_size):
             batch = segments[i:i + batch_size]
             print(f"  Processing segments {i + 1} to {i + len(batch)}...")
 
@@ -175,6 +181,9 @@ Generate the prompts now:"""
                 prompt_data["segment_text"] = segments[i + j][:200] + "..."  # First 200 chars
                 prompt_data["clip_number"] = i + j + 1
                 all_prompts.append(prompt_data)
+            
+            if save_callback:
+                save_callback(all_prompts)
 
         # Ensure we have exactly the right number of prompts
         while len(all_prompts) < num_images:
@@ -184,11 +193,13 @@ Generate the prompts now:"""
                 "prompt": f"Scene from {topic}, {style_suffix}",
                 "segment_text": "..."
             })
+            if save_callback:
+                save_callback(all_prompts)
 
         return all_prompts[:num_images]
 
 
-    def generate_prompts_from_srt(self, topic: str, srt_path: Path) -> list[dict]:
+    def generate_prompts_from_srt(self, topic: str, srt_path: Path, existing_prompts: list[dict] = None, save_callback = None) -> list[dict]:
         """
         Generate image prompts based on SRT subtitles.
         """
@@ -198,15 +209,22 @@ Generate the prompts now:"""
         
         print(f"Found {len(segments)} segments (sentences) in subtitles.")
         
-        all_prompts = []
+        existing_prompts = existing_prompts or []
+        all_prompts = existing_prompts.copy()
         style_suffix = self.channel.image_style_suffix
+        
+        if len(all_prompts) >= len(segments):
+            print("All prompts from SRT already generated.")
+            return all_prompts[:len(segments)]
+            
+        start_index = len(all_prompts)
         
         # Prepare text segments for batch processing
         segment_texts = [seg['text'] for seg in segments]
         
         # Process in batches
         batch_size = 10
-        for i in range(0, len(segments), batch_size):
+        for i in range(start_index, len(segments), batch_size):
             batch_texts = segment_texts[i:i + batch_size]
             print(f"  Processing segments {i + 1} to {i + len(batch_texts)}...")
             
@@ -230,6 +248,9 @@ Generate the prompts now:"""
                         "start_time": segment_info['start']
                     }
                     all_prompts.append(new_entry)
+            
+            if save_callback:
+                save_callback(all_prompts)
 
         # Ensure we didn't miss any (or format/id fixup)
         return all_prompts

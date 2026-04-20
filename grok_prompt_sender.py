@@ -22,6 +22,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 import time
 from playwright.sync_api import sync_playwright
 
@@ -31,6 +32,7 @@ from playwright.sync_api import sync_playwright
 GROK_IMAGINE_URL = "https://grok.com/imagine"
 DEFAULT_DELAY = 6       # Seconds between prompts
 DEFAULT_PROMPTS = "prompts.json"
+DOWNLOAD_DELAY = 80     # Seconds to wait before starting download script
 
 # ── Selectors (from live Grok Imagine page inspection) ─────────────────────────
 #
@@ -47,54 +49,21 @@ DEFAULT_PROMPTS = "prompts.json"
 #   Duration:            buttons with text "6s" / "10s"
 
 INPUT_SELECTOR = 'div.tiptap.ProseMirror[contenteditable="true"]'
-SUBMIT_BUTTON_SELECTOR = 'button[aria-label="Submit"]'
 
 
-# ── JS: Focus and clear the TipTap editor ─────────────────────────────────────
+# ── JS: Clear editor and insert text atomically ──────────────────────────────
 
-FOCUS_AND_CLEAR_JS = """
-(selector) => {
-    const el = document.querySelector(selector);
-    if (!el) return false;
+CLEAR_AND_INSERT_JS = """
+({ inputSelector, text }) => {
+    const el = document.querySelector(inputSelector);
+    if (!el) return { success: false, reason: 'input not found' };
 
-    // Focus the contenteditable div
+    // Focus, select all, and replace with new text in one shot
     el.focus();
+    document.execCommand('selectAll');
+    document.execCommand('insertText', false, text);
 
-    // Select all content and delete it
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('delete');
-
-    // Ensure it's truly empty
-    el.innerHTML = '<p></p>';
-    el.focus();
-
-    // Place cursor inside the <p>
-    const p = el.querySelector('p');
-    if (p) {
-        const newRange = document.createRange();
-        newRange.selectNodeContents(p);
-        newRange.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-    }
-
-    return true;
-}
-"""
-
-# ── JS: Click the Submit button ───────────────────────────────────────────────
-
-CLICK_SUBMIT_JS = """
-(selector) => {
-    const btn = document.querySelector(selector);
-    if (!btn) return { clicked: false, reason: 'not found' };
-    if (btn.disabled) return { clicked: false, reason: 'disabled' };
-    btn.click();
-    return { clicked: true, reason: 'ok' };
+    return { success: true };
 }
 """
 
@@ -201,6 +170,14 @@ def main():
         help=f"Seconds to wait between prompts (default: {DEFAULT_DELAY})"
     )
     parser.add_argument(
+        "--download-delay", type=int, default=DOWNLOAD_DELAY,
+        help=f"Seconds to wait before starting download script (default: {DOWNLOAD_DELAY})"
+    )
+    parser.add_argument(
+        "--download", action="store_true",
+        help="Automatically start the download script after finishing"
+    )
+    parser.add_argument(
         "--start", type=int, default=1,
         help="Prompt ID to start from (skip earlier prompts, default: 1)"
     )
@@ -227,6 +204,17 @@ def main():
         print(f"  No prompts with id >= {args.start}. Exiting.")
         return
 
+    # Skip prompts that already have a downloaded clip
+    clips_dir = os.path.join("output", args.video_name, "clips")
+    before_skip = len(prompts)
+    prompts = [p for p in prompts if not os.path.exists(os.path.join(clips_dir, f"clip_{p['id']:03d}.mp4"))]
+    skipped = before_skip - len(prompts)
+    if skipped:
+        print(f"  Skipped {skipped} prompts (clips already exist in {clips_dir})")
+    if not prompts:
+        print("  All clips already downloaded. Nothing to send.")
+        return
+
     total = len(prompts)
     print(f"  Found {total} prompts to send (starting from ID {prompts[0]['id']})")
 
@@ -237,7 +225,35 @@ def main():
         print("  Connecting to Chrome...")
         browser = pw.chromium.connect_over_cdp(f"http://localhost:{debug_port}")
         context = browser.contexts[0]
-        page = context.pages[0] if context.pages else context.new_page()
+        
+        # Try to find an existing Grok page to reuse
+        page = None
+        for p in context.pages:
+            try:
+                if p.url and "grok.com" in p.url:
+                    page = p
+                    break
+            except Exception:
+                pass
+        
+        # If no Grok page, try to find an empty new tab
+        if not page:
+            for p in context.pages:
+                try:
+                    if p.url in ["about:blank", "chrome://newtab/", "edge://newtab/"]:
+                        page = p
+                        break
+                except Exception:
+                    pass
+        
+        # Otherwise, create a new page
+        if not page:
+            page = context.new_page()
+
+        try:
+            page.bring_to_front()
+        except Exception as e:
+            print(f"  Warning: Could not bring page to front: {e}")
 
         # ── 3. Wait for browser/extensions to initialize, then navigate ──
         print("  Waiting 10s for browser to initialize...")
@@ -266,13 +282,6 @@ def main():
 
         print(f"  ✓ Found TipTap editor ({input_check['width']}×{input_check['height']}px)")
 
-        # Check submit button
-        submit_check = page.evaluate(CHECK_INPUT_JS, SUBMIT_BUTTON_SELECTOR)
-        if submit_check and submit_check.get('found'):
-            print(f"  ✓ Found Submit button")
-        else:
-            print("  ⚠ Submit button not found — will use Enter key fallback")
-
         # ── 5. Submit prompts one by one ───────────────────────────────────
         print(f"\n  {'=' * 56}")
         print(f"  Grok Imagine Prompt Sender")
@@ -290,31 +299,28 @@ def main():
             print(f"  [{i+1}/{total}] Prompt #{pid:03d}: {prompt_text[:70]}...")
 
             try:
-                # Step A: Focus and clear the TipTap editor
-                cleared = page.evaluate(FOCUS_AND_CLEAR_JS, INPUT_SELECTOR)
-                if not cleared:
-                    print(f"    ✗ Could not focus input — skipping")
+                # Step 1: Clear editor and insert new prompt text (atomic JS call)
+                result = page.evaluate(CLEAR_AND_INSERT_JS, {
+                    "inputSelector": INPUT_SELECTOR,
+                    "text": prompt_text,
+                })
+
+                if not result or not result.get('success'):
+                    reason = result.get('reason', 'unknown') if result else 'no result'
+                    print(f"    ✗ Failed ({reason}) — skipping")
                     fail_count += 1
                     continue
 
-                time.sleep(0.3)
-
-                # Step B: Paste the prompt via clipboard (instant)
-                import pyperclip
-                pyperclip.copy(prompt_text)
-                page.keyboard.press("Control+v")
-
-                time.sleep(0.5)
-
-                # Step C: Click the Submit button
-                click_result = page.evaluate(CLICK_SUBMIT_JS, SUBMIT_BUTTON_SELECTOR)
-                if not click_result or not click_result.get('clicked'):
-                    reason = click_result.get('reason', 'unknown') if click_result else 'no result'
-                    print(f"    ⚠ Submit button issue ({reason}) — trying Enter key")
-                    page.keyboard.press("Enter")
+                # Step 2: Submit via Enter (CDP trusted event — React requires isTrusted=true)
+                page.keyboard.press("Enter")
 
                 success_count += 1
                 print(f"    ✓ Sent!")
+
+                # Extra wait after the very first prompt
+                if i == 0:
+                    print(f"    First prompt — extra 9s wait...")
+                    time.sleep(9)
 
                 # Step D: Wait between prompts (skip wait after last prompt)
                 if i < total - 1:
@@ -333,6 +339,31 @@ def main():
         if fail_count:
             print(f"  Failed: {fail_count}")
         print(f"  {'=' * 56}\n")
+
+    # ── 7. Wait and Start Download ─────────────────────────────────────────
+    if args.download:
+        if success_count > 0:
+            print(f"\n  Waiting {args.download_delay} seconds before starting the downloader...")
+            time.sleep(args.download_delay)
+        else:
+            print("\n  No prompts sent, skipping delay.")
+            
+        print("  Starting download_clips_grok.py...")
+        
+        cmd = [
+            sys.executable,
+            "download_clips_grok.py",
+            args.video_name,
+            "--project", "1",
+            f"-{args.profile}"
+        ]
+        
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"  Downloader script exited with error: {e}")
+        except KeyboardInterrupt:
+            print("\n  Download interrupted by user.")
 
 
 if __name__ == "__main__":
