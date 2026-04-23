@@ -382,7 +382,7 @@ class ScriptGenerator:
         # No topics available for this channel
         return None
 
-    def generate_script(self, topic: str) -> str:
+    def generate_script(self, topic: str, video_folder: Optional[Path] = None) -> str:
         """Generate a full voiceover script for the given topic."""
         video_length = self.channel.target_video_length_minutes
         word_count = self.channel.target_word_count
@@ -423,6 +423,11 @@ IMPORTANT:
 - Just give me the script, nothing else
 
 Write the complete script now:"""
+
+        if video_folder:
+            prompt_file = video_folder / "prompt for script.txt"
+            with open(prompt_file, "w", encoding="utf-8") as f:
+                f.write(prompt)
 
         script = self.client.generate(prompt)
         cleaned_script = clean_ai_text(script)

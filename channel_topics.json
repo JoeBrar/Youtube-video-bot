@@ -1467,6 +1467,21 @@
       "video_id": 5,
       "topic": "Jonah and the Great Fish",
       "used": true
+    },
+    {
+      "video_id": 6,
+      "topic": "Daniel in the Lion's Den",
+      "used": true
+    },
+    {
+      "video_id": 7,
+      "topic": "Fall of Jericho",
+      "used": true
+    },
+    {
+      "video_id": 8,
+      "topic": "Why god created adam and eve in the first place",
+      "used": true
     }
   ],
   "greek_mythos": [
@@ -1500,6 +1515,33 @@
     {
       "video_id": 3,
       "topic": "Baldur and his death",
+      "used": true
+    },
+    {
+      "video_id": 4,
+      "topic": "Story of Fenrir",
+      "used": true
+    },
+    {
+      "video_id": 5,
+      "topic": "Thor vs Jormungandr — The Battle That Ends the World",
+      "used": true
+    },
+    {
+      "video_id": 6,
+      "topic": "The Ship Made from Dead Men's Nails — Naglfar",
+      "used": true
+    }
+  ],
+  "arctic_survival": [
+    {
+      "video_id": 1,
+      "topic": "Every Animal That Survives in The Extreme Cold.. Explained",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "Surviving a Night in the Arctic Wilderness",
       "used": true
     }
   ]

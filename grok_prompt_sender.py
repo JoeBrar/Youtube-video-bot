@@ -259,8 +259,8 @@ def main():
         print("  Waiting 10s for browser to initialize...")
         time.sleep(10)
         print(f"  Navigating to {GROK_IMAGINE_URL}...")
-        page.goto(GROK_IMAGINE_URL)
-        page.wait_for_load_state("domcontentloaded")
+        page.goto(GROK_IMAGINE_URL, timeout=60000)
+        page.wait_for_load_state("domcontentloaded", timeout=60000)
         time.sleep(5)  # Wait for Cloudflare + page render
 
         # ── 4. Verify the input is present ─────────────────────────────────
@@ -310,6 +310,10 @@ def main():
                     print(f"    ✗ Failed ({reason}) — skipping")
                     fail_count += 1
                     continue
+
+                if i == 0:
+                    print(f"    First prompt — waiting 3s before submission...")
+                    time.sleep(3)
 
                 # Step 2: Submit via Enter (CDP trusted event — React requires isTrusted=true)
                 page.keyboard.press("Enter")

@@ -55,6 +55,63 @@ def check_api_key():
     return True
 
 
+def run_grok_pipeline(video_folder: Path, channel_id: str, total_prompts: int):
+    """Run split_prompts, launch 4 grok profiles, wait, and combine video."""
+    import subprocess
+    import sys
+    import os
+    
+    # Split prompts automatically
+    print("\nAutomatically splitting prompts into 4 parts...")
+    try:
+        subprocess.run([sys.executable, "split_prompts.py", str(video_folder), "-4"], check=True)
+        print("Successfully split prompts.")
+    except Exception as e:
+        print(f"Error splitting prompts: {e}")
+        return
+
+    print("\nLaunching 4 parallel browser profiles for prompt generation...")
+    flags = subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, 'CREATE_NEW_CONSOLE') else 0
+    channel_video_path = f"{channel_id}/{video_folder.name}"
+    
+    procs = []
+    try:
+        for i in range(1, 5):
+            cmd = [
+                sys.executable,
+                "grok_prompt_sender.py",
+                channel_video_path,
+                f"-{i}",
+                "--prompts",
+                f"prompts{i}.json",
+                "--download"
+            ]
+            procs.append(subprocess.Popen(cmd, creationflags=flags))
+            
+        print("Waiting for all 4 profiles to finish generating and downloading...")
+        for p in procs:
+            p.wait()
+            
+        print("\nAll profiles completed. Checking downloaded clips...")
+        clips_dir = video_folder / "clips"
+        downloaded_clips = 0
+        if clips_dir.exists():
+            downloaded_clips = len([f for f in os.listdir(clips_dir) if f.endswith('.mp4')])
+            
+        missing = total_prompts - downloaded_clips
+        print(f"Total prompts: {total_prompts}, Downloaded clips: {downloaded_clips}, Missing: {missing}")
+        
+        if missing < 10:
+            print("Missing clips are less than 10. Combining into final video...")
+            subprocess.run([sys.executable, "create_video_from_clips.py", str(video_folder), "--keep-audio"], check=True)
+            print("Video combined successfully.")
+        else:
+            print(f"Too many missing clips ({missing}), skipping video combination.")
+            
+    except Exception as e:
+        print(f"Error during Grok pipeline execution: {e}")
+
+
 async def create_new_video(channel: Channel, topic: str = None, video_id: int = None, client: HiggsfieldClient = None) -> bool:
     """Create a new video from scratch for a specific channel.
 
@@ -98,7 +155,7 @@ async def create_new_video(channel: Channel, topic: str = None, video_id: int = 
 
     # Generate and save script immediately (user can start reading now!)
     print("Generating script...")
-    script = script_gen.generate_script(topic)
+    script = script_gen.generate_script(topic, video_folder=video_folder)
     word_count = len(script.split())
     duration = script_gen.estimate_duration_minutes(script)
     files.save_script(script)
@@ -129,7 +186,7 @@ async def create_new_video(channel: Channel, topic: str = None, video_id: int = 
     return True
 
 
-async def resume_video(video_folder: Path, channel_manager: ChannelManager, continue_after: bool = False, client: HiggsfieldClient = None):
+async def resume_video(video_folder: Path, channel_manager: ChannelManager, continue_after: bool = False, client: HiggsfieldClient = None, prompts_only: bool = False):
     """Resume video generation from where it left off.
 
     Args:
@@ -137,6 +194,7 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
         channel_manager: ChannelManager instance for channel lookup
         continue_after: If True, continue creating new videos after this one completes
         client: Optional existing HiggsfieldClient to reuse browser connection
+        prompts_only: If True, skip media/image generation phase
     """
     # Extract channel_id from folder path (output/channel_id/videoX)
     channel_id = video_folder.parent.name
@@ -278,12 +336,18 @@ async def resume_video(video_folder: Path, channel_manager: ChannelManager, cont
         )
         state.set_status(VideoState.PROMPTS_GENERATED)
         print(f"Generated {len(prompts)} prompts from subtitles.")
+        
+        # Split prompts automatically and run grok pipeline
+        run_grok_pipeline(video_folder, channel.id, len(prompts))
 
     # Retry any failed items
-    state.retry_failed()
+    if not prompts_only:
+        state.retry_failed()
 
-    # Continue with media generation
-    await generate_media(video_folder, channel, client)
+        # Continue with media generation
+        await generate_media(video_folder, channel, client)
+    else:
+        print("\n[PROMPTS ONLY MODE] Prompts generated. Skipping image generation.")
 
     # Continue creating new videos if requested
     if continue_after:
@@ -367,7 +431,7 @@ async def multi_channel_video_creation(channel_manager: ChannelManager, client: 
                 return
 
 
-async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, resume_folder: Path = None, single_video: bool = False):
+async def run_continuous_with_persistent_browser(channel_manager: ChannelManager, channel_id: str = None, resume_folder: Path = None, single_video: bool = False, prompts_only: bool = False):
     """Run continuous video creation with a single persistent browser session.
 
     Topics are strictly loaded from channel_topics.json.
@@ -377,6 +441,7 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
         channel_id: Optional specific channel ID to use (None = round-robin all channels)
         resume_folder: Optional video folder to resume before continuing
         single_video: If True, exit after creating one video
+        prompts_only: If True, skip the browser and media generation
     """
     # Get specific channel if requested
     specific_channel = None
@@ -388,16 +453,20 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
             return
 
     # Create a single client that persists across all videos
-    client = HiggsfieldClient(None, None)
+    # ONLY create and connect if we are resuming AND not in prompts_only mode
+    client = None
+    if resume_folder and not prompts_only:
+        client = HiggsfieldClient(None, None)
 
     try:
-        print("\n[BROWSER] Starting persistent browser session...")
-        await client.connect()
-        print("[BROWSER] Browser connected - will reuse for all videos\n")
+        if client:
+            print("\n[BROWSER] Starting persistent browser session...")
+            await client.connect()
+            print("[BROWSER] Browser connected - will reuse for all videos\n")
         
         if resume_folder:
             # Resume the specified video first, then continue
-            await resume_video(resume_folder, channel_manager, continue_after=not single_video, client=client)
+            await resume_video(resume_folder, channel_manager, continue_after=not single_video, client=client, prompts_only=prompts_only)
         else:
             # Round-robin through all channels (starting from specific_channel if provided)
             # Topics come strictly from channel_topics.json
@@ -406,8 +475,9 @@ async def run_continuous_with_persistent_browser(channel_manager: ChannelManager
     except KeyboardInterrupt:
         print("\n\nInterrupted by user.")
     finally:
-        print("\n[BROWSER] Closing browser session...")
-        await client.disconnect()
+        if client:
+            print("\n[BROWSER] Closing browser session...")
+            await client.disconnect()
 
 
 async def generate_media(video_folder: Path, channel: Channel, client: HiggsfieldClient = None):
@@ -541,7 +611,7 @@ def main():
         help="List all configured channels"
     )
     parser.add_argument(
-        "--script-only",
+        "--prompts-only",
         action="store_true",
         help="Only generate script and prompts, skip image generation"
     )
@@ -618,7 +688,7 @@ def main():
                 sys.exit(1)
 
         # Resume the video and continue creating new ones after completion
-        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, video_folder, single_video=args.single_video))
+        asyncio.run(run_continuous_with_persistent_browser(channel_manager, args.channel, video_folder, single_video=args.single_video, prompts_only=args.prompts_only))
         return
 
 
@@ -683,10 +753,14 @@ def main():
         state.set_status(VideoState.PROMPTS_GENERATED)
         
         print(f"\nSaved {len(prompts)} prompts to {files.prompts_file}")
+        
+        # Split prompts automatically and run grok pipeline
+        run_grok_pipeline(video_folder, channel.id, len(prompts))
+            
         return
 
     # Create new video
-    if args.script_only:
+    if args.prompts_only:
         # Only generate script and prompts
         # Get channel(s) to use
         if args.channel == "all":
@@ -694,7 +768,7 @@ def main():
             if not channels:
                 print("ERROR: No channels configured. Please check channels.json")
                 sys.exit(1)
-            channel = channels[0]  # Use first channel for script-only mode
+            channel = channels[0]  # Use first channel for prompts-only mode
             print(f"Using first channel: {channel.name}")
         else:
             channel = channel_manager.get_channel(args.channel)
@@ -728,7 +802,7 @@ def main():
 
         # Generate and save script immediately (user can start reading now!)
         print("Generating script...")
-        script = script_gen.generate_script(topic)
+        script = script_gen.generate_script(topic, video_folder=video_folder)
         word_count = len(script.split())
         duration = script_gen.estimate_duration_minutes(script)
         files.save_script(script)
@@ -755,12 +829,15 @@ def main():
             state.set_script_info(word_count, duration, len(prompts))
             state.set_status(VideoState.PROMPTS_GENERATED)
             print(f"\nScript and prompts saved to: {video_folder}")
+            
+            # Split prompts automatically and run grok pipeline
+            run_grok_pipeline(video_folder, channel.id, len(prompts))
         else:
              print(f"\nScript saved to: {video_folder}")
              print("Skipping prompt generation (SRT workflow).")
              print("Next: Generate voiceover/SRT, put in folder, then run --generate-prompts")
 
-        print("Run without --script-only to generate images.")
+        print("Run without --prompts-only to generate images.")
     else:
         # Run continuous video creation with persistent browser
         # Topics come strictly from channel_topics.json

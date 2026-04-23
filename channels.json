@@ -418,6 +418,31 @@
     "temperature": 0.7
   },
   {
+    "id": "arctic_survival",
+    "name": "Arctic Survival",
+    "niche": "cinematic extreme cold survival and Arctic life storytelling",
+    "description": "Faceless cinematic survival channel focused on extreme cold environments, Arctic wilderness survival, and life in sub-zero temperatures. Videos recreate the raw reality of surviving in frozen landscapes using immersive visuals, minimal dialogue, environmental sounds, and slow, atmospheric storytelling. The content highlights human endurance, hunting, shelter building, isolation, and the constant struggle against deadly cold, predators, and nature itself. Every video should feel quiet, intense, realistic, and deeply immersive, placing the viewer inside the harshest environments on Earth.",
+    "content_guidelines": "Open every video with a strong visual survival hook such as extreme cold conditions, dangerous wildlife, harsh storms, or critical survival moments. Maintain minimal dialogue and prioritize environmental immersion using realistic survival actions and slow cinematic pacing. Focus heavily on realism, survival logic, resource management, and physical struggle against cold. Scenes should feel quiet, tense, isolated, and atmospheric. Highlight survival routines such as building shelters, hunting, making fire, cooking food, gathering resources, and surviving storms. Avoid unrealistic heroics, fantasy elements, modern luxury comfort, humor that breaks immersion, or exaggerated drama. The tone should feel raw, cold, lonely, and grounded in real survival behavior.",
+    "topic_categories": [
+      "extreme cold survival scenarios",
+      "building snow shelters and survival structures",
+      "hunting and preparing food in frozen environments",
+      "surviving blizzards and deadly winter storms",
+      "daily life in sub-zero Arctic conditions",
+      "fire making and heat survival in deep winter",
+      "ice fishing and frozen water survival techniques",
+      "wildlife encounters with wolves, bears, and predators",
+      "survival during equipment failure or emergencies",
+      "long-term isolation survival in frozen wilderness"
+    ],
+    "image_style_suffix": "realistic, no text, no NSFW",
+    "target_video_length_minutes": 20,
+    "target_word_count": 3000,
+    "images_per_minute": 7,
+    "enable_web_search": false,
+    "temperature": 0.7
+  },
+  {
     "id": "bible_dynamics",
     "name": "Bible Dynamics",
     "niche": "cinematic AI recreation of Bible stories",
