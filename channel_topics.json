@@ -1484,7 +1484,7 @@
       "used": true
     }
   ],
-  "greek_mythos": [
+  "greek_mythos_pro": [
     {
       "video_id": 1,
       "topic": "The Rise of Zeus — How He Defeated the Titans",
@@ -1497,7 +1497,7 @@
     },
     {
       "video_id": 3,
-      "topic": "",
+      "topic": "Every Child of Zeus Explained",
       "used": true
     }
   ],
@@ -1541,7 +1541,19 @@
     },
     {
       "video_id": 2,
-      "topic": "Surviving a Night in the Arctic Wilderness",
+      "topic": "Surviving a Night in the Arctic Wilderness - Extreme survival",
+      "used": true
+    }
+  ],
+  "darth_explainer": [
+    {
+      "video_id": 1,
+      "topic": "Every Mythical Creature That Roams the Sky, flies in the sky... explained",
+      "used": true
+    },
+    {
+      "video_id": 2,
+      "topic": "",
       "used": true
     }
   ]

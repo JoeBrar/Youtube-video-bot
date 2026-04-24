@@ -336,6 +336,10 @@ def main():
     parser.add_argument("-2", dest="profile", action="store_const", const=2, help="Use browser profile 2")
     parser.add_argument("-3", dest="profile", action="store_const", const=3, help="Use browser profile 3")
     parser.add_argument("-4", dest="profile", action="store_const", const=4, help="Use browser profile 4")
+    parser.add_argument("-5", dest="profile", action="store_const", const=5, help="Use browser profile 5")
+    parser.add_argument("-6", dest="profile", action="store_const", const=6, help="Use browser profile 6")
+    parser.add_argument("-7", dest="profile", action="store_const", const=7, help="Use browser profile 7")
+    parser.add_argument("-8", dest="profile", action="store_const", const=8, help="Use browser profile 8")
     parser.set_defaults(profile=1)
     args = parser.parse_args()
 

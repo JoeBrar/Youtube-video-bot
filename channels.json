@@ -483,8 +483,8 @@
     "temperature": 0.7
   },
   {
-    "id": "greek_mythos",
-    "name": "Greek Mythos",
+    "id": "greek_mythos_pro",
+    "name": "Greek Mythos Pro",
     "niche": "cinematic AI recreation of Greek mythology stories",
     "description": "Faceless AI Greek mythology storytelling channel that recreates legendary myths using cinematic AI-generated visuals and immersive AI voice narration. Stories are told in an engaging, dramatic, and emotionally compelling way, bringing ancient legends to life with vivid storytelling, dynamic pacing, and visually rich scenes inspired by classical mythology.",
     "content_guidelines": "Open every video with a powerful cinematic hook that creates curiosity, mystery, or tension. Narration should be immersive, dramatic, and easy to understand. Focus on storytelling, emotion, character development, and mythological drama. Scenes should feel epic, cinematic, and inspired by ancient Greek art, architecture, and landscapes. Maintain consistent pacing with rising tension, clear turning points, and strong endings that feel legendary, tragic, or awe-inspiring. Avoid modern elements, humor that breaks immersion, or NSFW content. Maintain mythological authenticity while keeping stories accessible to modern audiences.",
@@ -526,6 +526,31 @@
       "lesser-known Norse mythology stories"
     ],
     "image_style_suffix": "realistic, Norse mythology scenes, no text, no NSFW, no nudity",
+    "target_video_length_minutes": 20,
+    "target_word_count": 3000,
+    "images_per_minute": 7,
+    "enable_web_search": false,
+    "temperature": 0.7
+  },
+  {
+    "id": "darth_explainer",
+    "name": "Darth Explainer",
+    "niche": "mythology and folklore storytelling with realistic 3D cinematic visuals",
+    "description": "A mythology-focused storytelling channel that explains gods, creatures, legends, and belief systems from cultures around the world using realistic 3D visuals. Each video breaks down complex myths into clear, engaging narratives while staying visually immersive and cinematic. The content covers Greek, Norse, Egyptian, Hindu, Aztec, Slavic, and other global mythologies. Most videos are a compilation of various figures, gods etc. all explained in a single video one-by-one.",
+    "content_guidelines": "Start each video with a strong hook. Maintain a clear, structured explanation style that balances storytelling with informative breakdowns.",
+    "topic_categories": [
+      "every major god explained (by mythology)",
+      "mythical creatures explained (by region or theme)",
+      "comparisons between gods and mythologies",
+      "origin stories of gods, monsters, and legends",
+      "lesser-known myths and hidden folklore",
+      "dark and dangerous mythological entities",
+      "underworlds and afterlife concepts across cultures",
+      "mythology-based 'what if' or analytical breakdowns",
+      "symbolism and meaning behind myths",
+      "connections between different mythologies"
+    ],
+    "image_style_suffix": "realistic, no text, no NSFW, no nudity",
     "target_video_length_minutes": 20,
     "target_word_count": 3000,
     "images_per_minute": 7,

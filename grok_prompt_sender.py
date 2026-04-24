@@ -187,6 +187,10 @@ def main():
     parser.add_argument("-2", dest="profile", action="store_const", const=2, help="Use browser profile 2")
     parser.add_argument("-3", dest="profile", action="store_const", const=3, help="Use browser profile 3")
     parser.add_argument("-4", dest="profile", action="store_const", const=4, help="Use browser profile 4")
+    parser.add_argument("-5", dest="profile", action="store_const", const=5, help="Use browser profile 5")
+    parser.add_argument("-6", dest="profile", action="store_const", const=6, help="Use browser profile 6")
+    parser.add_argument("-7", dest="profile", action="store_const", const=7, help="Use browser profile 7")
+    parser.add_argument("-8", dest="profile", action="store_const", const=8, help="Use browser profile 8")
     parser.set_defaults(profile=1)
 
     args = parser.parse_args()
@@ -226,27 +230,29 @@ def main():
         browser = pw.chromium.connect_over_cdp(f"http://localhost:{debug_port}")
         context = browser.contexts[0]
         
-        # Try to find an existing Grok page to reuse
+        # Try to find an empty new tab first (since running the script opens one)
+        # Iterate in reverse to get the most recently opened tab
         page = None
-        for p in context.pages:
+        for p in reversed(context.pages):
             try:
-                if p.url and "grok.com" in p.url:
+                if p.url in ["about:blank", "chrome://newtab/", "chrome://new-tab-page/", "edge://newtab/", "edge://new-tab-page/"]:
                     page = p
                     break
             except Exception:
                 pass
         
-        # If no Grok page, try to find an empty new tab
+        # If no empty tab, try to find an ACTIVE Grok page (most recent first)
         if not page:
-            for p in context.pages:
+            for p in reversed(context.pages):
                 try:
-                    if p.url in ["about:blank", "chrome://newtab/", "edge://newtab/"]:
-                        page = p
-                        break
+                    if p.url and "grok.com" in p.url:
+                        if p.evaluate("document.visibilityState") == "visible":
+                            page = p
+                            break
                 except Exception:
                     pass
         
-        # Otherwise, create a new page
+        # Otherwise, create a new page (do not reuse old invisible tabs)
         if not page:
             page = context.new_page()
 
